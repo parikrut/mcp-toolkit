@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "dev-skills": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"]
+    }
+  }
+}
