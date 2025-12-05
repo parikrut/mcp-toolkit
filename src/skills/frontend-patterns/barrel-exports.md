@@ -38,7 +38,7 @@ import { PageLayout } from "../components/layout";
    them from the same path.
 5. **Layout barrel** (`components/layout/index.ts`) exports `AppLayout`,
    `Header`, `PageLayout`, `Sidebar`.
-6. **Package barrels** (`@civic/ui`, `@civic/contracts`) use
+6. **Package barrels** (`@myorg/ui`, `@myorg/contracts`) use
    `export * from "./…"` chains to flatten the public surface.
 7. **Order exports alphabetically** within the barrel for easy scanning.
 

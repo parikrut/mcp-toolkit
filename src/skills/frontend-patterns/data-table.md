@@ -6,7 +6,7 @@
 
 The **Data Table** is a domain-specific feature component that defines URL-state
 parsers, column definitions, and renders the shared `DataTable` component from
-`@civic/ui`. It owns the page's query-state contract (parsers + nuqs options)
+`@myorg/ui`. It owns the page's query-state contract (parsers + nuqs options)
 which the [Toolbar](toolbar.md) also imports to stay in sync.
 
 ## 2. Overview
@@ -25,7 +25,7 @@ write the same query parameters without shared React state. TanStack Query
 handles deduplication when both Stats and Table call the same hook with the
 same filters.
 
-The generic `DataTable` from `@civic/ui` handles loading skeletons, empty
+The generic `DataTable` from `@myorg/ui` handles loading skeletons, empty
 states, error display, row click, and pagination controls.
 
 ## 3. Rules
@@ -50,8 +50,8 @@ states, error display, row click, and pagination controls.
    `setQs({ page: p })`.
 8. **Loading and empty states are delegated.** Pass `loading={isLoading}` and
    `emptyMessage="…"` — the shared `DataTable` renders the appropriate UI.
-9. **Uses `@civic/ui`:** `DataTable`, `Column`, `formatAddress` (or other
-   format utilities). Domain types from `@civic/contracts`.
+9. **Uses `@myorg/ui`:** `DataTable`, `Column`, `formatAddress` (or other
+   format utilities). Domain types from `@myorg/contracts`.
 
 ## 4. Structure
 
@@ -123,10 +123,10 @@ src/features/<domain>/<domain>.table.tsx
 // src/features/properties/properties.table.tsx
 import { useNavigate } from "react-router";
 import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
-import { DataTable, formatAddress, type Column } from "@civic/ui";
+import { DataTable, formatAddress, type Column } from "@myorg/ui";
 import { useProperties } from "../../hooks/use-properties";
-import type { PropertyResponse as Property } from "@civic/contracts";
-import { PropertyClassSchema } from "@civic/contracts";
+import type { PropertyResponse as Property } from "@myorg/contracts";
+import { PropertyClassSchema } from "@myorg/contracts";
 
 // ─── URL state parsers ──────────────────────────────────────
 
@@ -183,7 +183,7 @@ export const PropertiesTable = () => {
             columns={columns}
             data={data?.items ?? []}
             loading={isLoading}
-            emptyMessage="No properties found. Import an MPAC assessment roll to get started."
+            emptyMessage="No properties found. Import an imported record to get started."
             onRowClick={(row) => navigate(`/properties/${row.id}`)}
             pagination={
                 data

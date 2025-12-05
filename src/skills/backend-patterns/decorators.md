@@ -1,13 +1,13 @@
 # Custom NestJS Decorators
 
-> Pattern documentation for the reusable custom decorators in `@civic/common` that control authentication bypass, role authorization, user extraction, audit logging, and response validation.
+> Pattern documentation for the reusable custom decorators in `@myorg/common` that control authentication bypass, role authorization, user extraction, audit logging, and response validation.
 
 ## 1. Component Pattern
 
 The **Custom Decorators** are a set of five purpose-built NestJS decorators
 stored in `packages/common/src/decorators/`. Each decorator lives in its own
 file and is re-exported from `decorators/index.ts` so consumers import from
-`@civic/common`. The decorators integrate with guards, interceptors, and
+`@myorg/common`. The decorators integrate with guards, interceptors, and
 parameter injection to provide declarative metadata-driven behavior:
 
 1. **`@Public()`** — bypasses `AuthGuard`
@@ -20,11 +20,11 @@ parameter injection to provide declarative metadata-driven behavior:
 
 | Decorator                         | Type         | Metadata Key          | Consumer                        | Import                                           |
 | --------------------------------- | ------------ | --------------------- | ------------------------------- | ------------------------------------------------ |
-| `@Public()`                       | Method/Class | `IS_PUBLIC_KEY`       | `AuthGuard`                     | `import { Public } from "@civic/common"`         |
-| `@Roles(...roles)`                | Method/Class | `ROLES_KEY`           | `RolesGuard`                    | `import { Roles } from "@civic/common"`          |
-| `@CurrentUser(field?)`            | Parameter    | —                     | NestJS param injection          | `import { CurrentUser } from "@civic/common"`    |
-| `@AuditAction(action, resource?)` | Method       | `AUDIT_ACTION_KEY`    | `AuditInterceptor`              | `import { AuditAction } from "@civic/common"`    |
-| `@ResponseSchema(zodSchema)`      | Method       | `RESPONSE_SCHEMA_KEY` | `ResponseValidationInterceptor` | `import { ResponseSchema } from "@civic/common"` |
+| `@Public()`                       | Method/Class | `IS_PUBLIC_KEY`       | `AuthGuard`                     | `import { Public } from "@myorg/common"`         |
+| `@Roles(...roles)`                | Method/Class | `ROLES_KEY`           | `RolesGuard`                    | `import { Roles } from "@myorg/common"`          |
+| `@CurrentUser(field?)`            | Parameter    | —                     | NestJS param injection          | `import { CurrentUser } from "@myorg/common"`    |
+| `@AuditAction(action, resource?)` | Method       | `AUDIT_ACTION_KEY`    | `AuditInterceptor`              | `import { AuditAction } from "@myorg/common"`    |
+| `@ResponseSchema(zodSchema)`      | Method       | `RESPONSE_SCHEMA_KEY` | `ResponseValidationInterceptor` | `import { ResponseSchema } from "@myorg/common"` |
 
 All decorators are thin wrappers around NestJS's `SetMetadata` or
 `createParamDecorator`. They carry zero runtime logic — the logic lives in
@@ -36,7 +36,7 @@ the corresponding guard or interceptor that reads the metadata.
    `packages/common/src/decorators/`. The file exports the decorator function
    and the metadata key constant.
 2. **Re-exported from `decorators/index.ts`.** The barrel file re-exports
-   all decorators and keys so consumers only import from `@civic/common`.
+   all decorators and keys so consumers only import from `@myorg/common`.
 3. **`@Public()` returns `true` metadata.** `SetMetadata(IS_PUBLIC_KEY, true)`.
    Can be applied at handler or class level. Class-level makes all handlers
    in that controller public.
@@ -222,9 +222,9 @@ export { ResponseSchema, RESPONSE_SCHEMA_KEY } from "./response-schema.decorator
 
 ```typescript
 import { Controller, Get, Post, Delete, Param, Body } from "@nestjs/common";
-import { Public, Roles, CurrentUser, AuditAction, ResponseSchema } from "@civic/common";
-import { RequestUser } from "@civic/common";
-import { PropertyResponseSchema } from "@civic/contracts";
+import { Public, Roles, CurrentUser, AuditAction, ResponseSchema } from "@myorg/common";
+import { RequestUser } from "@myorg/common";
+import { PropertyResponseSchema } from "@myorg/contracts";
 
 @Controller("properties")
 export class PropertyController {

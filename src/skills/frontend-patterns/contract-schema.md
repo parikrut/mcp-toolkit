@@ -7,7 +7,7 @@
 A **Contract Schema** file defines the complete API surface for a domain entity
 using Zod schemas. It is the single source of truth for enums, query parameters,
 request bodies, response shapes, and endpoint definitions — shared between
-frontend and backend via the `@civic/contracts` package.
+frontend and backend via the `@myorg/contracts` package.
 
 ## 2. Overview
 

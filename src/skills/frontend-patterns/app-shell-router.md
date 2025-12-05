@@ -29,9 +29,9 @@ main.tsx  (providers)
 | Provider              | Source                  | Purpose                            |
 | --------------------- | ----------------------- | ---------------------------------- |
 | `QueryClientProvider` | `@tanstack/react-query` | Data-fetching cache                |
-| `ThemeProvider`       | `@civic/ui`             | Light/dark mode                    |
+| `ThemeProvider`       | `@myorg/ui`             | Light/dark mode                    |
 | `ToastProvider`       | `hooks/use-toast`       | Toast notification context         |
-| `ScrollProgress`      | `@civic/ui`             | Page scroll indicator              |
+| `ScrollProgress`      | `@myorg/ui`             | Page scroll indicator              |
 | `NuqsAdapter`         | `nuqs`                  | URL state adapter for React Router |
 | `BrowserRouter`       | `react-router`          | Client-side routing                |
 | `AuthProvider`        | `lib/auth-context`      | Authentication state               |
@@ -42,7 +42,7 @@ main.tsx  (providers)
    The import uses `.then(m => ({ default: m.NamedExport }))` to convert
    named exports to default exports for React.lazy compatibility.
 2. **`Suspense` fallback** is a centered `<Spinner size="lg" />` component.
-3. **`ErrorBoundary`** from `@civic/ui` wraps the route tree to catch
+3. **`ErrorBoundary`** from `@myorg/ui` wraps the route tree to catch
    rendering errors.
 4. **`QueryClient`** is configured with global defaults:
     - `staleTime: 30_000` (30s cache freshness)
@@ -96,7 +96,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/react-router/v7";
-import { ThemeProvider, ScrollProgress } from "@civic/ui";
+import { ThemeProvider, ScrollProgress } from "@myorg/ui";
 import { AuthProvider } from "./lib/auth-context";
 import { ToastProvider } from "./hooks/use-toast";
 import { App } from "./App";
@@ -139,7 +139,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router";
 import { AppLayout } from "./components/layout";
-import { ErrorBoundary, Spinner } from "@civic/ui";
+import { ErrorBoundary, Spinner } from "@myorg/ui";
 import { useAuth } from "./lib/auth-context";
 
 const LoginPage = lazy(() => import("./pages/login").then((m) => ({ default: m.LoginPage })));
@@ -193,7 +193,7 @@ import { Suspense } from "react";
 import { Outlet } from "react-router";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
-import { SkipNav, ErrorBoundary, Spinner } from "@civic/ui";
+import { SkipNav, ErrorBoundary, Spinner } from "@myorg/ui";
 
 export const AppLayout = () => (
     <div className="flex h-screen bg-(--color-background)">

@@ -2,7 +2,10 @@
   "servers": {
     "dev-skills": {
       "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"]
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "SKILLS_DIR": "${workspaceFolder}/src/skills"
+      }
     }
   }
 }

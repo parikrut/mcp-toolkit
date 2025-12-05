@@ -1,7 +1,7 @@
 # Database Patterns
 
 > Canonical reference for PostgreSQL database design and Prisma ORM usage
-> in the Civic Modules platform.
+> in your microservices platform.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
 
@@ -15,7 +15,7 @@ only code that touches Prisma — services never call `prisma.*` directly.
 
 ```
 ┌───────────────────────────────────────────────────┐
-│  Module A (assessment-roll)                       │
+│  Module A (order-management)                       │
 │  ┌─────────┐  ┌────────────┐  ┌───────────────┐  │
 │  │ Service  │→ │ Repository │→ │ PrismaService │  │
 │  └─────────┘  └────────────┘  └───────┬───────┘  │
@@ -30,18 +30,18 @@ only code that touches Prisma — services never call `prisma.*` directly.
                                         ▼
                               ┌─────────────────┐
                               │  PostgreSQL 16   │
-                              │  assessment_roll │
+                              │  order_management │
                               └─────────────────┘
 
 ┌───────────────────────────────────────────────────┐
-│  Module B (tax-billing)                           │
+│  Module B (billing)                           │
 │             ...same structure...                  │
 └───────────────────────────────┬───────────────────┘
                                 │
                                 ▼
                       ┌─────────────────────┐
                       │  PostgreSQL 16       │
-                      │  tax_billing_instal  │
+                      │  billing_instal  │
                       └─────────────────────┘
 ```
 

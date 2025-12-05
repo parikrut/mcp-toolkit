@@ -4,7 +4,7 @@
 
 **Type:** Multi-Stage Dockerfile  
 **Layer:** Infrastructure / Container Build  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/Dockerfile`
+**Reference Implementation:** `modules/domain/revenue/order-management/Dockerfile`
 
 ## 2. Overview
 
@@ -21,8 +21,8 @@ Build context is always the **monorepo root** (`../../` from a product directory
 1. **Always two stages.** The builder stage is named `builder`; the production stage is named `production`. No intermediate stages.
 2. **Pin exact versions.** Node (`node:20-alpine`), pnpm (`pnpm@10.29.3`), and prisma (`prisma@7.4.0`) are pinned to prevent drift across environments.
 3. **Copy manifests before source.** Copy `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and `tsconfig.json` first. Then copy each workspace package's `package.json`. Run `pnpm install --frozen-lockfile` before any source code enters the image. This maximizes Docker layer cache hits.
-4. **Build in dependency order.** Always: `generate:prisma` → `@civic/contracts` → `@civic/common` → `@civic/module-name`. Contracts and common are shared libraries that the module depends on.
-5. **Deploy with `--prod --legacy`.** `pnpm --filter @civic/module-name deploy /deploy --prod --legacy` produces a standalone directory with only production dependencies. The `--legacy` flag ensures compatibility with node_modules resolution.
+4. **Build in dependency order.** Always: `generate:prisma` → `@myorg/contracts` → `@myorg/common` → `@myorg/module-name`. Contracts and common are shared libraries that the module depends on.
+5. **Deploy with `--prod --legacy`.** `pnpm --filter @myorg/module-name deploy /deploy --prod --legacy` produces a standalone directory with only production dependencies. The `--legacy` flag ensures compatibility with node_modules resolution.
 6. **Production image has no build tools.** No pnpm, no TypeScript, no devDependencies. Only `node`, `prisma` (global), and the deployed artifacts.
 7. **Copy exactly 6 artifacts from builder.** `node_modules`, `package.json`, `dist`, `prisma`, `generated`, `docker-entrypoint.sh`. Nothing else.
 8. **EXPOSE the module's assigned port.** The port must match the value in the service registry.
@@ -37,7 +37,7 @@ Build context is always the **monorepo root** (`../../` from a product directory
 modules/<layer>/<domain?>/<module-name>/
 ├── Dockerfile                  # Multi-stage build (this pattern)
 ├── docker-entrypoint.sh        # Startup script (see docker-entrypoint pattern)
-├── package.json                # Must have @civic/module-name as "name"
+├── package.json                # Must have @myorg/module-name as "name"
 ├── prisma/
 │   └── schema.prisma           # Prisma schema (copied into production image)
 ├── generated/                  # Prisma client output (copied into production image)
@@ -65,7 +65,7 @@ modules/<layer>/<domain?>/<module-name>/
 
 ```dockerfile
 # ══════════════════════════════════════════════════════════════
-# Multi-Stage Dockerfile — @civic/resource-module
+# Multi-Stage Dockerfile — @myorg/resource-module
 # ══════════════════════════════════════════════════════════════
 # Build context: monorepo root (set via docker-compose build.context)
 
@@ -96,16 +96,16 @@ COPY modules/domain/revenue/resource-module/ modules/domain/revenue/resource-mod
 RUN cd modules/domain/revenue/resource-module && pnpm generate:prisma
 
 # 2. Build shared packages first (module depends on these)
-RUN pnpm --filter @civic/contracts build
-RUN pnpm --filter @civic/common build
+RUN pnpm --filter @myorg/contracts build
+RUN pnpm --filter @myorg/common build
 
 # 3. Build the module itself
-RUN pnpm --filter @civic/resource-module build
+RUN pnpm --filter @myorg/resource-module build
 
 # ── Deploy: prune to production-only dependencies ─────────────
 # Creates /deploy with flat node_modules (no workspace symlinks).
 # --prod removes devDependencies, --legacy uses node_modules resolution.
-RUN pnpm --filter @civic/resource-module deploy /deploy --prod --legacy
+RUN pnpm --filter @myorg/resource-module deploy /deploy --prod --legacy
 
 # ── Stage 2: Production image ────────────────────────────────
 FROM node:20-alpine AS production
@@ -152,8 +152,8 @@ Replace these placeholders throughout the Dockerfile:
 
 | Placeholder | Example Value | Description |
 |---|---|---|
-| `modules/domain/revenue/resource-module` | `modules/shared/billing-invoicing` | Full path to module in monorepo |
-| `@civic/resource-module` | `@civic/billing-invoicing` | Package name from module's `package.json` |
+| `modules/domain/revenue/resource-module` | `modules/shared/invoice-service` | Full path to module in monorepo |
+| `@myorg/resource-module` | `@myorg/invoice-service` | Package name from module's `package.json` |
 | `4104` | `4102` | Port from service registry |
 
 **If the module has additional workspace dependencies** (e.g., it imports from another module), add their `package.json` in Layer 1 and their source in Layer 2:
@@ -164,7 +164,7 @@ COPY modules/shared/some-dependency/package.json modules/shared/some-dependency/
 
 # Layer 2 — additional dependency source
 COPY modules/shared/some-dependency/ modules/shared/some-dependency/
-RUN pnpm --filter @civic/some-dependency build
+RUN pnpm --filter @myorg/some-dependency build
 ```
 
 **Key observations:**

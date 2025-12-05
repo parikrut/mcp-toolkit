@@ -24,7 +24,7 @@ A form file has three distinct sections:
 | ------------- | -------------------------------------------------------- |
 | **Schema**    | Zod schema derived from the contract body schema         |
 | **Types**     | `z.infer<>` type alias for the form values               |
-| **Component** | `react-hook-form` + `@civic/ui` inputs + mutation submit |
+| **Component** | `react-hook-form` + `@myorg/ui` inputs + mutation submit |
 
 The form communicates completion to its parent via callback props (`onSuccess`,
 `onCancel`) — it does not manage its own open/close state or navigation.
@@ -36,8 +36,8 @@ The form communicates completion to its parent via callback props (`onSuccess`,
 | `react-hook-form`     | Uncontrolled form state, field registration    |
 | `@hookform/resolvers` | Bridges Zod schema → react-hook-form           |
 | `zod`                 | Client-side validation schema                  |
-| `@civic/ui`           | `Input`, `Select`, `Button`, `extractApiError` |
-| `@civic/contracts`    | Source contract body schema + enum schemas     |
+| `@myorg/ui`           | `Input`, `Select`, `Button`, `extractApiError` |
+| `@myorg/contracts`    | Source contract body schema + enum schemas     |
 | Domain mutation hook  | `useCreate<Entity>()` / `useUpdate<Entity>()`  |
 | `useToast`            | Success / error toast notifications            |
 
@@ -48,7 +48,7 @@ The form communicates completion to its parent via callback props (`onSuccess`,
    Component name is PascalCase: `AppealForm`, `AppealDecisionForm`.
 2. **Schema is derived from the contract.** Use `.pick()`, `.extend()`,
    or `.partial()` on the contract's `Create<Entity>BodySchema` /
-   `Update<Entity>BodySchema` from `@civic/contracts`. Add frontend-only
+   `Update<Entity>BodySchema` from `@myorg/contracts`. Add frontend-only
    refinements (e.g. custom error messages, string-to-number coercion)
    in the `.extend()` block.
 3. **One form per mutation.** A "Create" form and an "Edit/Decision" form
@@ -73,7 +73,7 @@ The form communicates completion to its parent via callback props (`onSuccess`,
     and derive `defaultValues` from it.
 12. **Exports from the feature barrel.** Re-export via
     `src/features/<domain>/index.ts` (see [barrel-exports.md](barrel-exports.md)).
-13. **Uses `@civic/ui` form components** — `Input`, `Select`, `Button`.
+13. **Uses `@myorg/ui` form components** — `Input`, `Select`, `Button`.
     Wire errors via `error={errors.<field>?.message}`. Use `{...register("<field>")}` spread.
 
 ## 4. Structure
@@ -82,7 +82,7 @@ The form communicates completion to its parent via callback props (`onSuccess`,
 src/features/<domain>/<entity>-form.tsx
 │
 ├── // ── Schema (derived from contract) ──
-│   import { Create<Entity>BodySchema } from "@civic/contracts"
+│   import { Create<Entity>BodySchema } from "@myorg/contracts"
 │
 │   const <entity>FormSchema = Create<Entity>BodySchema
 │       .pick({ field1: true, field2: true })
@@ -149,10 +149,10 @@ src/features/<domain>/<entity>-form.tsx
 ```
 <Entity>Form
   ├── react-hook-form + zodResolver     →  form state + validation
-  ├── <entity>FormSchema (Zod)          →  derived from @civic/contracts
+  ├── <entity>FormSchema (Zod)          →  derived from @myorg/contracts
   ├── useCreate<Entity>() / useUpdate   →  see data-hook.md
   ├── useToast()                        →  success / error feedback
-  ├── Input, Select, Button             →  see @civic/ui
+  ├── Input, Select, Button             →  see @myorg/ui
   └── extractApiError()                 →  error message extraction
 ```
 
@@ -165,10 +165,10 @@ src/features/<domain>/<entity>-form.tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Input, Select, extractApiError } from "@civic/ui";
+import { Button, Input, Select, extractApiError } from "@myorg/ui";
 import { useCreateAppeal } from "../../hooks/use-appeals";
 import { useToast } from "../../hooks/use-toast";
-import { CreateAppealBodySchema } from "@civic/contracts";
+import { CreateAppealBodySchema } from "@myorg/contracts";
 
 // ─── Schema (derived from contract) ─────────────────────────
 
@@ -273,11 +273,11 @@ export const AppealForm = ({ onSuccess, onCancel }: AppealFormProps) => {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Input, Select, extractApiError } from "@civic/ui";
+import { Button, Input, Select, extractApiError } from "@myorg/ui";
 import { useRecordAppealDecision } from "../../hooks/use-appeals";
 import { useToast } from "../../hooks/use-toast";
-import { AppealDecisionSchema } from "@civic/contracts";
-import type { AppealResponse } from "@civic/contracts";
+import { AppealDecisionSchema } from "@myorg/contracts";
+import type { AppealResponse } from "@myorg/contracts";
 
 // ─── Schema ─────────────────────────────────────────────────
 

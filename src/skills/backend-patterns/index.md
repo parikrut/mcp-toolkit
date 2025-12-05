@@ -1,6 +1,6 @@
 # Backend Patterns
 
-> Canonical reference for building NestJS microservice modules in the Civic Modules platform.
+> Canonical reference for building NestJS microservice modules in your microservices platform.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
 

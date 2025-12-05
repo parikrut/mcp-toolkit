@@ -202,7 +202,7 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
         }
 
         // -----------------------------------------------------------------------
-        // 3. Domain errors (custom error classes from @civic/common)
+        // 3. Domain errors (custom error classes from @myorg/common)
         // -----------------------------------------------------------------------
         if (exception instanceof NotFoundError) {
             return {

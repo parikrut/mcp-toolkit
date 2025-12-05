@@ -39,7 +39,7 @@ conditionally enabled only once the primary entity loads.
 5. **Three render states:** Loading (`<Spinner />`), Error/Not-found
    (error card + back button), and Success (card grid).
 6. **Back button** navigates to the list page via `useNavigate()`.
-7. **Edit/Delete use `Modal` from `@civic/ui`.** Open state is controlled
+7. **Edit/Delete use `Modal` from `@myorg/ui`.** Open state is controlled
    by local `useState<boolean>`. The modal renders an edit form or delete
    confirmation form as its children.
 8. **`DetailRow` is a local helper component** — a `<div>` with `<dt>` (muted
@@ -59,7 +59,7 @@ src/pages/<domain>-detail.tsx
 ├── import { useState } from "react"
 ├── import { useParams, useNavigate } from "react-router"
 ├── import { ArrowLeft, Edit, Trash2 } from "lucide-react"
-├── import { Card, Badge, Button, Spinner, Modal, … } from "@civic/ui"
+├── import { Card, Badge, Button, Spinner, Modal, … } from "@myorg/ui"
 ├── import { use<Domain>, use<Related>… } from "../hooks"
 ├── import { <Domain>EditForm } from "../features/<domain>/…"
 ├── import { <Domain>DeleteForm } from "../features/<domain>/…"
@@ -111,7 +111,7 @@ import {
     formatCurrency,
     formatAddress,
     formatFullAddress,
-} from "@civic/ui";
+} from "@myorg/ui";
 import { useProperty, useOwners, useAssessments } from "../hooks";
 import { PropertyEditForm } from "../features/properties/property-edit-form";
 import { PropertyDeleteForm } from "../features/properties/property-delete.form";

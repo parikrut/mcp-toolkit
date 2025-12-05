@@ -16,7 +16,7 @@ same Zod schema from the shared contract package.
 | Concept                  | Description                                                                                    |
 | ------------------------ | ---------------------------------------------------------------------------------------------- |
 | **Event name constants** | `as const` object mapping semantic keys to dot-notation routing key strings                    |
-| **Routing key format**   | `domain.entity.action` (e.g., `"assessment.roll.imported"`, `"tax.bill.generated"`)            |
+| **Routing key format**   | `domain.entity.action` (e.g., `"order.record.imported"`, `"billing.invoice.generated"`)            |
 | **Payload schema**       | One Zod schema per event with all required fields + mandatory `correlationId`                  |
 | **File location**        | `packages/contracts/src/events/<domain>/<entity>.events.ts`                                    |
 | **Barrel exports**       | Each domain has an `index.ts`, rolled up to `events/index.ts`, then `src/index.ts`             |
@@ -33,12 +33,12 @@ packages/contracts/src/events/
 ├── index.ts                              ← re-exports all domain barrels
 ├── revenue/
 │   ├── index.ts                          ← re-exports all revenue event files
-│   ├── assessment-roll.events.ts         ← assessment + property events
+│   ├── order-management.events.ts         ← assessment + property events
 │   ├── tax-bill.events.ts               ← billing events
-│   ├── tax-certificate.events.ts        ← certificate events
-│   ├── tax-levy-rate.events.ts          ← levy/rate events
-│   ├── tax-sale.events.ts              ← tax sale events
-│   └── payment-processing.events.ts     ← payment events
+│   ├── certificate.events.ts        ← certificate events
+│   ├── rate-service.events.ts          ← levy/rate events
+│   ├── auction.events.ts              ← auction events
+│   └── payment-service.events.ts     ← payment events
 ├── platform/
 │   ├── index.ts
 │   └── notification.events.ts           ← notification delivery events
@@ -65,21 +65,21 @@ packages/contracts/src/events/
     ```typescript
     // ✅ Correct — as const object
     export const TaxBillEvents = {
-        BILL_GENERATED: "tax.bill.generated",
-        BILL_MAILED: "tax.bill.mailed",
+        BILL_GENERATED: "billing.invoice.generated",
+        BILL_MAILED: "billing.invoice.mailed",
     } as const;
 
     // ❌ Wrong — native enum
     export enum TaxBillEvents {
-        BILL_GENERATED = "tax.bill.generated",
+        BILL_GENERATED = "billing.invoice.generated",
     }
     ```
 
 3. **Routing keys use dot notation: `domain.entity.action`.**
 
     ```typescript
-    "assessment.roll.imported"; // domain=assessment, entity=roll, action=imported
-    "tax.bill.generated"; // domain=tax, entity=bill, action=generated
+    "order.record.imported"; // domain=assessment, entity=roll, action=imported
+    "billing.invoice.generated"; // domain=tax, entity=bill, action=generated
     "property.ownership.changed"; // domain=property, entity=ownership, action=changed
     ```
 
@@ -88,14 +88,14 @@ packages/contracts/src/events/
 
     ```typescript
     const validated = AssessmentCreatedEventSchema.parse(payload);
-    await this.rabbitPublisher.emit(AssessmentRollEvents.ASSESSMENT_CREATED, validated);
+    await this.rabbitPublisher.emit(OrderManagementEvents.ASSESSMENT_CREATED, validated);
     ```
 
 5. **Subscribers MUST Zod-parse on receive.** Event handlers parse the
    incoming payload to ensure type safety:
 
     ```typescript
-    @Subscribe(AssessmentRollEvents.ASSESSMENT_CREATED)
+    @Subscribe(OrderManagementEvents.ASSESSMENT_CREATED)
     async handle(raw: unknown) {
         const event = AssessmentCreatedEventSchema.parse(raw);
         // event is fully typed
@@ -104,7 +104,7 @@ packages/contracts/src/events/
 
 6. **One events file per aggregate/entity group.** Group related events
    together (e.g., all assessment + property events in
-   `assessment-roll.events.ts`).
+   `order-management.events.ts`).
 
 7. **Event schemas can import from entity contracts.** Reuse enum schemas
    from the contract layer:
@@ -167,17 +167,17 @@ packages/contracts/src/events/<domain>/<entity>.events.ts
 
 ## 5. Example Implementation
 
-### assessment-roll.events.ts — Full Source (Revenue Domain)
+### order-management.events.ts — Full Source (Revenue Domain)
 
 ```typescript
-// packages/contracts/src/events/revenue/assessment-roll.events.ts
+// packages/contracts/src/events/revenue/order-management.events.ts
 import { z } from "zod";
 import { PropertyClassSchema } from "../../contracts/revenue/property.contract";
 
-// ─── Assessment Roll Events ─────────────────────────────────
+// ─── Order Record Events ─────────────────────────────────
 
-export const AssessmentRollEvents = {
-    ROLL_IMPORTED: "assessment.roll.imported",
+export const OrderManagementEvents = {
+    RECORD_IMPORTED: "order.record.imported",
     ASSESSMENT_CREATED: "assessment.created",
     ASSESSMENT_UPDATED: "assessment.updated",
     PROPERTY_CREATED: "property.created",
@@ -196,7 +196,7 @@ export const AssessmentRollEvents = {
 
 // ─── Payload Schemas ────────────────────────────────────────
 
-export const AssessmentRollImportedEventSchema = z.object({
+export const OrderManagementImportedEventSchema = z.object({
     batchId: z.string().uuid(),
     taxYear: z.number().int(),
     rollType: z.enum(["INITIAL", "SUPPLEMENTARY", "OMITTED"]),
@@ -206,7 +206,7 @@ export const AssessmentRollImportedEventSchema = z.object({
     importedAt: z.coerce.date(),
     correlationId: z.string().uuid(),
 });
-export type AssessmentRollImportedEvent = z.infer<typeof AssessmentRollImportedEventSchema>;
+export type OrderManagementImportedEvent = z.infer<typeof OrderManagementImportedEventSchema>;
 
 export const AssessmentCreatedEventSchema = z.object({
     assessmentId: z.string().uuid(),
@@ -298,8 +298,8 @@ import { TaxBillTypeSchema } from "../../contracts/revenue/tax-bills.contract";
 // ─── Tax Bill Events ────────────────────────────────────────
 
 export const TaxBillEvents = {
-    BILL_GENERATED: "tax.bill.generated",
-    BILL_MAILED: "tax.bill.mailed",
+    BILL_GENERATED: "billing.invoice.generated",
+    BILL_MAILED: "billing.invoice.mailed",
     BILL_EMAILED: "billing.bill.emailed",
     BILL_BATCH_EMAILED: "billing.bill.batch.emailed",
     PENALTY_APPLIED: "tax.penalty.applied",
@@ -344,7 +344,7 @@ export type PenaltyAppliedEvent = z.infer<typeof PenaltyAppliedEventSchema>;
 
 ```typescript
 // modules/domain/revenue/billing/src/services/tax-bill.service.ts
-import { TaxBillEvents, BillGeneratedEventSchema } from "@civic/contracts";
+import { TaxBillEvents, BillGeneratedEventSchema } from "@myorg/contracts";
 
 @Injectable()
 export class TaxBillService {
@@ -377,7 +377,7 @@ export class TaxBillService {
 
 ```typescript
 // modules/domain/revenue/arrears/src/handlers/bill-generated.handler.ts
-import { TaxBillEvents, BillGeneratedEventSchema, type BillGeneratedEvent } from "@civic/contracts";
+import { TaxBillEvents, BillGeneratedEventSchema, type BillGeneratedEvent } from "@myorg/contracts";
 
 @Injectable()
 export class BillGeneratedHandler {
@@ -454,10 +454,10 @@ export * from "./revenue";
 
 ```typescript
 // packages/contracts/src/events/revenue/index.ts
-export * from "./assessment-roll.events";
+export * from "./order-management.events";
 export * from "./tax-bill.events";
-export * from "./tax-certificate.events";
-export * from "./tax-levy-rate.events";
-export * from "./tax-sale.events";
-export * from "./payment-processing.events";
+export * from "./certificate.events";
+export * from "./rate-service.events";
+export * from "./auction.events";
+export * from "./payment-service.events";
 ```

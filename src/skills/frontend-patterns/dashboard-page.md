@@ -57,7 +57,7 @@ Each row is wrapped in `ScrollReveal` for staggered entrance animations
 src/pages/dashboard.tsx
 ├── import hooks: use<Domain>(), useAnalytics…()
 ├── import charts: from "../components/charts"
-├── import { StatCard, ScrollReveal, AnimatedCounter, Card, DataTable, Button } from "@civic/ui"
+├── import { StatCard, ScrollReveal, AnimatedCounter, Card, DataTable, Button } from "@myorg/ui"
 │
 ├── const recentColumns: Column<T>[] = […]
 │
@@ -127,7 +127,7 @@ import {
     DataTable,
     formatCurrency,
     type Column,
-} from "@civic/ui";
+} from "@myorg/ui";
 import { useProperties, useTaxBills, useTaxationSummary, useRevenueTrend } from "../hooks";
 import { RevenueTrendChart, PropertyClassChart } from "../components/charts";
 
@@ -157,7 +157,7 @@ export const DashboardPage = () => {
                     <StatCard
                         title="Total Properties"
                         value={<AnimatedCounter value={totalProperties.toLocaleString()} />}
-                        change="From assessment roll"
+                        change="From order record"
                         changeType="positive"
                         icon={<Building2 className="h-6 w-6" aria-hidden="true" />}
                     />

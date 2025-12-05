@@ -4,7 +4,7 @@
 
 **Type:** Product Composition Manifest  
 **Layer:** Infrastructure / Deployment Configuration  
-**Reference Implementation:** `products/property-tax/manifest.yaml`
+**Reference Implementation:** `products/my-product/manifest.yaml`
 
 ## 2. Overview
 
@@ -24,7 +24,7 @@ The manifest bridges the gap between the typed service registry (developer-focus
 1. **One manifest per product.** Located at `products/<product-name>/manifest.yaml`.
 2. **`product` section is mandatory.** Must include `name` (kebab-case), `version` (CalVer: `YYYY.N`), and `description`.
 3. **Gateway type is `kong`.** All products use the Kong API gateway for routing.
-4. **Subdomain is product-scoped.** Format: `<subdomain>.<tenant>.civic-platform.ca`. The subdomain should be short and descriptive (e.g., `tax`, `hr`, `fleet`).
+4. **Subdomain is product-scoped.** Format: `<subdomain>.<tenant>.my-platform.dev`. The subdomain should be short and descriptive (e.g., `tax`, `hr`, `fleet`).
 5. **Every API route maps to exactly one upstream.** Routes never fan out to multiple services. The `upstream` value matches the service registry key / Docker Compose hostname.
 6. **Swagger docs route per module.** Format: `path: /docs/<short-name>` → `rewrite: /swagger`. This maps a product-level docs URL to each service's Swagger UI.
 7. **Health check per service.** Format: `path: /api/v1/health/<service-name>` → `target: http://<hostname>:<port>/health`. The gateway proxies health checks so monitoring tools have a single entry point.
@@ -33,9 +33,9 @@ The manifest bridges the gap between the typed service registry (developer-focus
 10. **`required: true`** means the product cannot function without this module. Optional modules (e.g., add-on features) use `required: false`.
 11. **Config includes port and replicas.** Port must match the service registry. Replicas is a deployment hint (minimum instances).
 12. **Infrastructure databases follow DB-per-service.** One database entry per module that has persistent storage. Name is snake_case, module references the kebab-case service name.
-13. **Messaging uses a product-scoped vhost.** All modules in the product share one RabbitMQ vhost (e.g., `/property-tax`). This provides isolation between products on the same broker.
+13. **Messaging uses a product-scoped vhost.** All modules in the product share one RabbitMQ vhost (e.g., `/my-product`). This provides isolation between products on the same broker.
 14. **Cache is shared.** All modules in the product share one Redis instance / database number.
-15. **Auth gateway is implicit.** The auth-gateway module is always present (it's a platform service) but may not appear in the `modules` section if it's provisioned separately by the platform layer.
+15. **Auth gateway is implicit.** The auth-service module is always present (it's a platform service) but may not appear in the `modules` section if it's provisioned separately by the platform layer.
 
 ## 4. Structure
 
@@ -111,14 +111,14 @@ product:
 
 gateway:
     type: kong
-    subdomain: product # product.<tenant>.civic-platform.ca
+    subdomain: product # product.<tenant>.my-platform.dev
     routes:
         # ── Auth Gateway (platform — always present) ──
         - path: /api/v1/auth
-          upstream: auth-gateway
+          upstream: auth-service
           port: 4100
         - path: /api/v1/users
-          upstream: auth-gateway
+          upstream: auth-service
           port: 4100
 
         # ── Audit Logging (platform) ──
@@ -128,21 +128,21 @@ gateway:
 
         # ── Notification Engine (platform) ──
         - path: /api/v1/notifications
-          upstream: notification-engine
+          upstream: notification-service
           port: 4101
         - path: /api/v1/templates
-          upstream: notification-engine
+          upstream: notification-service
           port: 4101
         - path: /api/v1/consent
-          upstream: notification-engine
+          upstream: notification-service
           port: 4101
 
         # ── Billing & Invoicing (shared) ──
         - path: /api/v1/invoices
-          upstream: billing-invoicing
+          upstream: invoice-service
           port: 4102
         - path: /api/v1/billing
-          upstream: billing-invoicing
+          upstream: invoice-service
           port: 4102
 
         # ── Resource Module (domain) ──
@@ -160,10 +160,10 @@ gateway:
 
         # ── Swagger docs per module ──
         - path: /docs/notifications
-          upstream: notification-engine
+          upstream: notification-service
           rewrite: /swagger
         - path: /docs/billing
-          upstream: billing-invoicing
+          upstream: invoice-service
           rewrite: /swagger
         - path: /docs/resources
           upstream: resource-module
@@ -174,12 +174,12 @@ gateway:
 
     # ── Health Check Routes ────────────────────────
     health:
-        - path: /api/v1/health/auth-gateway
-          target: http://auth-gateway:4100/health
-        - path: /api/v1/health/notification-engine
-          target: http://notification-engine:4101/health
-        - path: /api/v1/health/billing-invoicing
-          target: http://billing-invoicing:4102/health
+        - path: /api/v1/health/auth-service
+          target: http://auth-service:4100/health
+        - path: /api/v1/health/notification-service
+          target: http://notification-service:4101/health
+        - path: /api/v1/health/invoice-service
+          target: http://invoice-service:4102/health
         - path: /api/v1/health/audit-logging
           target: http://audit-logging:4300/health
         - path: /api/v1/health/resource-module
@@ -194,13 +194,13 @@ gateway:
 modules:
     # Platform layer (L1) — foundational services
     platform:
-        - name: auth-gateway
+        - name: auth-service
           version: "^0.1.0"
           required: true
           config:
               port: 4100
               replicas: 2
-        - name: notification-engine
+        - name: notification-service
           version: "^0.1.0"
           required: true
           config:
@@ -215,7 +215,7 @@ modules:
 
     # Shared layer (L2) — cross-domain services
     shared:
-        - name: billing-invoicing
+        - name: invoice-service
           version: "^0.1.0"
           required: true
           config:
@@ -248,14 +248,14 @@ infrastructure:
     # All databases live on the same PostgreSQL cluster per tenant.
 
     databases:
-        - name: auth_gateway
-          module: auth-gateway
-        - name: notification_engine
-          module: notification-engine
+        - name: auth_service
+          module: auth-service
+        - name: notification_service
+          module: notification-service
         - name: audit_logging
           module: audit-logging
-        - name: billing_invoicing
-          module: billing-invoicing
+        - name: invoice_service
+          module: invoice-service
         - name: resource_module
           module: resource-module
         - name: another_module

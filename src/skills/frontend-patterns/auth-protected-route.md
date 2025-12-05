@@ -41,8 +41,8 @@ The flow:
    before the navigation that follows.
 5. **`ProtectedRoute` is a component, not a hook.** It wraps `<Route>`
    elements and accepts an optional `allowedRoles` prop for RBAC.
-6. **`allowedRoles`** is an array of `CivicRole` values from
-   `@civic/contracts`. If the user's role is not in the array, they are
+6. **`allowedRoles`** is an array of `AppRole` values from
+   `@myorg/contracts`. If the user's role is not in the array, they are
    redirected to `/`.
 7. **Login page** stores the attempted path in `location.state.from` so
    `ProtectedRoute` can redirect back after successful login.
@@ -90,7 +90,7 @@ src/App.tsx
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Routes, LoginResponseSchema } from "@civic/contracts";
+import { Routes, LoginResponseSchema } from "@myorg/contracts";
 import { api, USER_STORAGE_KEY } from "../services/api";
 
 type AuthUser = { id: string; email: string; role: string; firstName: string };
@@ -160,7 +160,7 @@ const ProtectedRoute = ({
     allowedRoles,
 }: {
     children: ReactNode;
-    allowedRoles?: CivicRole[];
+    allowedRoles?: AppRole[];
 }) => {
     const { user, isAuthenticated } = useAuth();
     const location = useLocation();

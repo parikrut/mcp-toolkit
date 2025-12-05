@@ -4,7 +4,12 @@
  * MCP Developer Toolkit - Entry Point
  *
  * An MCP server that gives AI assistants specialized development expertise.
- * Skills are loaded from markdown files and exposed via tools.
+ * Skills are loaded from a configurable directory of markdown documents.
+ *
+ * Configuration:
+ *   SKILLS_DIR env var — absolute path to skills directory
+ *   --skills-dir arg  — absolute path to skills directory
+ *   Default: src/skills/ in this package
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -19,7 +24,7 @@ const server = new McpServer({
   name: "dev-skills",
   version: "1.0.0",
   description:
-    "MCP server that provides specialized development skills and patterns",
+    "MCP server that provides specialized development skills, patterns, and scaffolding templates",
 });
 
 // Register all tools

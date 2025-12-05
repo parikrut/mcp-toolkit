@@ -5,8 +5,8 @@
 **Type:** Event Publisher  
 **Layer:** Events / Infrastructure  
 **File Location:** `modules/domain/<domain>/<module>/src/events/publishers/<resource>.publisher.ts`  
-**Naming Convention:** `<Resource>Publisher` (e.g., `AssessmentRollPublisher`, `TaxBillingPublisher`)  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/src/events/publishers/assessment-roll.publisher.ts`
+**Naming Convention:** `<Resource>Publisher` (e.g., `OrderManagementPublisher`, `BillingPublisher`)  
+**Reference Implementation:** `modules/domain/revenue/order-management/src/events/publishers/order-management.publisher.ts`
 
 ## 2. Overview
 
@@ -31,10 +31,10 @@ Key design principles:
 5. **MUST** Zod-validate every payload before emitting — use the schema's `.parse()` method (not `.safeParse()`; let it throw on invalid data since this is a programming error, not user input).
 6. **MUST** use `this.client.emit(routingKey, validatedPayload)` — `emit()` is fire-and-forget (no response expected). Never use `send()` for events.
 7. **MUST** import routing keys from the event contract (e.g., `ResourceEvents.CREATED`) — never hardcode routing key strings.
-8. **MUST** import payload schemas and types from `@civic/contracts`.
+8. **MUST** import payload schemas and types from `@myorg/contracts`.
 9. **MUST** create a structured logger via `createLogger({ module: "<module>-publisher" })`.
 10. **MUST** log the event name, primary resource ID, and correlation ID after successful publish.
-11. **MUST** have one publish method per event type — naming convention: `publish<Resource><Action>(payload)` (e.g., `publishAssessmentRollCreated`, `publishAssessmentRollUpdated`).
+11. **MUST** have one publish method per event type — naming convention: `publish<Resource><Action>(payload)` (e.g., `publishOrderManagementCreated`, `publishOrderManagementUpdated`).
 12. **MUST** define the `QUEUE_TOKEN` constant in the publisher file or a shared constants file.
 13. **MUST NOT** contain any business logic — the publisher is a pure infrastructure concern.
 14. **MUST NOT** catch and swallow Zod validation errors — if validation fails, it's a bug in the calling code and should propagate.
@@ -59,7 +59,7 @@ modules/domain/<domain>/<module>/
 // ─── Imports ─────────────────────────────────────────────────────────
 import { Injectable, Optional, Inject } from "@nestjs/common";    // NestJS decorators
 import { ClientProxy } from "@nestjs/microservices";               // RMQ client type
-import { createLogger } from "@civic/common";                      // Structured logger
+import { createLogger } from "@myorg/common";                      // Structured logger
 import {                                                           // Event contracts
     ResourceEvents,                                                // Routing key enum
     ResourceCreatedSchema,                                         // Zod schemas
@@ -68,7 +68,7 @@ import {                                                           // Event cont
     type ResourceCreatedPayload,                                   // TypeScript types
     type ResourceUpdatedPayload,
     type ResourceDeletedPayload,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 
 // ─── Constants ───────────────────────────────────────────────────────
 const QUEUE_TOKEN = "RESOURCE_QUEUE";                              // Injection token
@@ -96,7 +96,7 @@ The publisher must be registered as a provider in the module's NestJS module, al
 
 ```typescript
 import { Module } from "@nestjs/common";
-import { RmqModule } from "@civic/common";
+import { RmqModule } from "@myorg/common";
 import { ResourcePublisher } from "./events/publishers/resource.publisher";
 
 const QUEUE_TOKEN = "RESOURCE_QUEUE";
@@ -143,29 +143,29 @@ export class ResourceService {
 
 ## 5. Example Implementation
 
-### Full Publisher — Assessment Roll Events
+### Full Publisher — Order Record Events
 
 ```typescript
 import { Injectable, Optional, Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
-import { createLogger } from "@civic/common";
+import { createLogger } from "@myorg/common";
 import {
-    AssessmentRollEvents,
-    AssessmentRollCreatedSchema,
-    AssessmentRollUpdatedSchema,
-    AssessmentRollDeletedSchema,
-    AssessmentRollStatusChangedSchema,
-    type AssessmentRollCreatedPayload,
-    type AssessmentRollUpdatedPayload,
-    type AssessmentRollDeletedPayload,
-    type AssessmentRollStatusChangedPayload,
-} from "@civic/contracts";
+    OrderManagementEvents,
+    OrderManagementCreatedSchema,
+    OrderManagementUpdatedSchema,
+    OrderManagementDeletedSchema,
+    OrderManagementStatusChangedSchema,
+    type OrderManagementCreatedPayload,
+    type OrderManagementUpdatedPayload,
+    type OrderManagementDeletedPayload,
+    type OrderManagementStatusChangedPayload,
+} from "@myorg/contracts";
 
-const QUEUE_TOKEN = "ASSESSMENT_ROLL_QUEUE";
-const logger = createLogger({ module: "assessment-roll-publisher" });
+const QUEUE_TOKEN = "ORDER_MANAGEMENT_QUEUE";
+const logger = createLogger({ module: "order-management-publisher" });
 
 @Injectable()
-export class AssessmentRollPublisher {
+export class OrderManagementPublisher {
     constructor(
         @Optional()
         @Inject(QUEUE_TOKEN)
@@ -173,98 +173,98 @@ export class AssessmentRollPublisher {
     ) {}
 
     /**
-     * Publishes an event when a new assessment roll is created.
-     * Downstream consumers (e.g., tax-billing-instalment) react to this
+     * Publishes an event when a new order record is created.
+     * Downstream consumers (e.g., billing) react to this
      * to generate initial billing records.
      */
-    async publishAssessmentRollCreated(payload: AssessmentRollCreatedPayload): Promise<void> {
+    async publishOrderManagementCreated(payload: OrderManagementCreatedPayload): Promise<void> {
         if (!this.client) {
-            logger.warn("RMQ client not available — skipping AssessmentRollCreated event publish");
+            logger.warn("RMQ client not available — skipping OrderManagementCreated event publish");
             return;
         }
 
-        const validated = AssessmentRollCreatedSchema.parse(payload);
-        this.client.emit(AssessmentRollEvents.CREATED, validated);
+        const validated = OrderManagementCreatedSchema.parse(payload);
+        this.client.emit(OrderManagementEvents.CREATED, validated);
         logger.info(
             {
-                event: AssessmentRollEvents.CREATED,
+                event: OrderManagementEvents.CREATED,
                 assessmentRollId: validated.assessmentRollId,
                 correlationId: validated.correlationId,
             },
-            "AssessmentRollCreated event published",
+            "OrderManagementCreated event published",
         );
     }
 
     /**
-     * Publishes an event when an assessment roll is updated.
+     * Publishes an event when an order record is updated.
      * Downstream consumers may need to recalculate billing amounts.
      */
-    async publishAssessmentRollUpdated(payload: AssessmentRollUpdatedPayload): Promise<void> {
+    async publishOrderManagementUpdated(payload: OrderManagementUpdatedPayload): Promise<void> {
         if (!this.client) {
-            logger.warn("RMQ client not available — skipping AssessmentRollUpdated event publish");
+            logger.warn("RMQ client not available — skipping OrderManagementUpdated event publish");
             return;
         }
 
-        const validated = AssessmentRollUpdatedSchema.parse(payload);
-        this.client.emit(AssessmentRollEvents.UPDATED, validated);
+        const validated = OrderManagementUpdatedSchema.parse(payload);
+        this.client.emit(OrderManagementEvents.UPDATED, validated);
         logger.info(
             {
-                event: AssessmentRollEvents.UPDATED,
+                event: OrderManagementEvents.UPDATED,
                 assessmentRollId: validated.assessmentRollId,
                 correlationId: validated.correlationId,
             },
-            "AssessmentRollUpdated event published",
+            "OrderManagementUpdated event published",
         );
     }
 
     /**
-     * Publishes an event when an assessment roll is soft-deleted.
+     * Publishes an event when an order record is soft-deleted.
      * Downstream consumers should deactivate related records.
      */
-    async publishAssessmentRollDeleted(payload: AssessmentRollDeletedPayload): Promise<void> {
+    async publishOrderManagementDeleted(payload: OrderManagementDeletedPayload): Promise<void> {
         if (!this.client) {
-            logger.warn("RMQ client not available — skipping AssessmentRollDeleted event publish");
+            logger.warn("RMQ client not available — skipping OrderManagementDeleted event publish");
             return;
         }
 
-        const validated = AssessmentRollDeletedSchema.parse(payload);
-        this.client.emit(AssessmentRollEvents.DELETED, validated);
+        const validated = OrderManagementDeletedSchema.parse(payload);
+        this.client.emit(OrderManagementEvents.DELETED, validated);
         logger.info(
             {
-                event: AssessmentRollEvents.DELETED,
+                event: OrderManagementEvents.DELETED,
                 assessmentRollId: validated.assessmentRollId,
                 correlationId: validated.correlationId,
             },
-            "AssessmentRollDeleted event published",
+            "OrderManagementDeleted event published",
         );
     }
 
     /**
-     * Publishes an event when an assessment roll status changes
+     * Publishes an event when an order record status changes
      * (e.g., DRAFT → CERTIFIED → FINAL).
-     * This is a high-value event — tax billing uses it to trigger instalment generation.
+     * This is a high-value event — billing uses it to trigger schedule generation.
      */
-    async publishAssessmentRollStatusChanged(
-        payload: AssessmentRollStatusChangedPayload,
+    async publishOrderManagementStatusChanged(
+        payload: OrderManagementStatusChangedPayload,
     ): Promise<void> {
         if (!this.client) {
             logger.warn(
-                "RMQ client not available — skipping AssessmentRollStatusChanged event publish",
+                "RMQ client not available — skipping OrderManagementStatusChanged event publish",
             );
             return;
         }
 
-        const validated = AssessmentRollStatusChangedSchema.parse(payload);
-        this.client.emit(AssessmentRollEvents.STATUS_CHANGED, validated);
+        const validated = OrderManagementStatusChangedSchema.parse(payload);
+        this.client.emit(OrderManagementEvents.STATUS_CHANGED, validated);
         logger.info(
             {
-                event: AssessmentRollEvents.STATUS_CHANGED,
+                event: OrderManagementEvents.STATUS_CHANGED,
                 assessmentRollId: validated.assessmentRollId,
                 previousStatus: validated.previousStatus,
                 newStatus: validated.newStatus,
                 correlationId: validated.correlationId,
             },
-            "AssessmentRollStatusChanged event published",
+            "OrderManagementStatusChanged event published",
         );
     }
 }
@@ -277,12 +277,12 @@ For modules that only need to publish one event:
 ```typescript
 import { Injectable, Optional, Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
-import { createLogger } from "@civic/common";
+import { createLogger } from "@myorg/common";
 import {
     PaymentEvents,
     PaymentReceivedSchema,
     type PaymentReceivedPayload,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 
 const QUEUE_TOKEN = "PAYMENT_QUEUE";
 const logger = createLogger({ module: "payment-publisher" });
@@ -320,25 +320,25 @@ export class PaymentPublisher {
 
 ```typescript
 import { Test, TestingModule } from "@nestjs/testing";
-import { AssessmentRollPublisher } from "./assessment-roll.publisher";
+import { OrderManagementPublisher } from "./order-management.publisher";
 
-const QUEUE_TOKEN = "ASSESSMENT_ROLL_QUEUE";
+const QUEUE_TOKEN = "ORDER_MANAGEMENT_QUEUE";
 
-describe("AssessmentRollPublisher", () => {
-    let publisher: AssessmentRollPublisher;
+describe("OrderManagementPublisher", () => {
+    let publisher: OrderManagementPublisher;
     let mockClient: { emit: jest.Mock };
 
     beforeEach(async () => {
         mockClient = { emit: jest.fn() };
 
         const module: TestingModule = await Test.createTestingModule({
-            providers: [AssessmentRollPublisher, { provide: QUEUE_TOKEN, useValue: mockClient }],
+            providers: [OrderManagementPublisher, { provide: QUEUE_TOKEN, useValue: mockClient }],
         }).compile();
 
-        publisher = module.get(AssessmentRollPublisher);
+        publisher = module.get(OrderManagementPublisher);
     });
 
-    it("should emit AssessmentRollCreated event with validated payload", async () => {
+    it("should emit OrderManagementCreated event with validated payload", async () => {
         const payload = {
             assessmentRollId: "roll-123",
             propertyId: "prop-456",
@@ -348,23 +348,23 @@ describe("AssessmentRollPublisher", () => {
             timestamp: new Date().toISOString(),
         };
 
-        await publisher.publishAssessmentRollCreated(payload);
+        await publisher.publishOrderManagementCreated(payload);
 
         expect(mockClient.emit).toHaveBeenCalledWith(
-            "assessment-roll.created",
+            "order-management.created",
             expect.objectContaining({ assessmentRollId: "roll-123" }),
         );
     });
 
     it("should not throw when RMQ client is null", async () => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [AssessmentRollPublisher, { provide: QUEUE_TOKEN, useValue: null }],
+            providers: [OrderManagementPublisher, { provide: QUEUE_TOKEN, useValue: null }],
         }).compile();
 
-        const nullPublisher = module.get(AssessmentRollPublisher);
+        const nullPublisher = module.get(OrderManagementPublisher);
 
         await expect(
-            nullPublisher.publishAssessmentRollCreated({
+            nullPublisher.publishOrderManagementCreated({
                 assessmentRollId: "roll-123",
                 propertyId: "prop-456",
                 assessedValue: 350000,
@@ -377,7 +377,7 @@ describe("AssessmentRollPublisher", () => {
 
     it("should throw ZodError for invalid payload", async () => {
         await expect(
-            publisher.publishAssessmentRollCreated({
+            publisher.publishOrderManagementCreated({
                 // Missing required fields
                 assessmentRollId: "roll-123",
             } as any),

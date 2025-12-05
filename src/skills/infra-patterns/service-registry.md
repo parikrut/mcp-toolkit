@@ -4,7 +4,7 @@
 
 **Type:** Typed Configuration Registry  
 **Layer:** Infrastructure / Configuration Source of Truth  
-**Reference Implementation:** `products/property-tax/infra/service-registry.ts`
+**Reference Implementation:** `products/my-product/infra/service-registry.ts`
 
 ## 2. Overview
 
@@ -31,7 +31,7 @@ Runtime validation in `generate.ts` catches errors that TypeScript's type system
 1. **One entry per microservice.** The key is the Docker Compose service name (kebab-case). It must match the `hostname` field.
 2. **Ports are globally unique.** No two services may share a port. The compile-time `AssertUniquePorts` type catches this, and `generate.ts` validates at runtime.
 3. **Routes are globally unique.** No two services may own the same API route prefix. Validated at runtime by `generate.ts`.
-4. **Database names are snake_case.** Derived from the service name (e.g., `tax-billing-instalment` → `tax_billing_instalment`). Services without a database (e.g., API gateway) set `database: ""`.
+4. **Database names are snake_case.** Derived from the service name (e.g., `billing` → `billing`). Services without a database (e.g., API gateway) set `database: ""`.
 5. **Layer must be `"platform"`, `"shared"`, or `"domain"`.** This determines startup order and documentation grouping.
 6. **Routes include the full path prefix.** Always `/api/v1/<resource>`. No trailing slash.
 7. **`extraEnv` URL values must reference valid services.** The URL format is `http://<hostname>:<port>`. Both hostname and port must match an existing registry entry. Validated by `generate.ts`.
@@ -136,11 +136,11 @@ export interface ServiceDefinition {
 
 const serviceRegistry = {
     // ── Platform Layer (L1) ─────────────────────────
-    "auth-gateway": {
-        hostname: "auth-gateway",
+    "auth-service": {
+        hostname: "auth-service",
         port: 4100,
-        database: "auth_gateway",
-        dockerfile: "modules/platform/auth-gateway/Dockerfile",
+        database: "auth_service",
+        dockerfile: "modules/platform/auth-service/Dockerfile",
         layer: "platform",
         label: "Auth Gateway",
         needsRedis: true,
@@ -149,11 +149,11 @@ const serviceRegistry = {
             REFRESH_TOKEN_EXPIRES_IN: "7d",
         },
     },
-    "notification-engine": {
-        hostname: "notification-engine",
+    "notification-service": {
+        hostname: "notification-service",
         port: 4101,
-        database: "notification_engine",
-        dockerfile: "modules/platform/notification-engine/Dockerfile",
+        database: "notification_service",
+        dockerfile: "modules/platform/notification-service/Dockerfile",
         layer: "platform",
         label: "Notification Engine",
         routes: ["/api/v1/notifications", "/api/v1/templates", "/api/v1/consent"],
@@ -169,16 +169,16 @@ const serviceRegistry = {
     },
 
     // ── Shared Layer (L2) ───────────────────────────
-    "billing-invoicing": {
-        hostname: "billing-invoicing",
+    "invoice-service": {
+        hostname: "invoice-service",
         port: 4102,
-        database: "billing_invoicing",
-        dockerfile: "modules/shared/billing-invoicing/Dockerfile",
+        database: "invoice_service",
+        dockerfile: "modules/shared/invoice-service/Dockerfile",
         layer: "shared",
         label: "Billing & Invoicing",
         routes: ["/api/v1/invoices", "/api/v1/billing"],
         extraEnv: {
-            NOTIFICATION_ENGINE_URL: "http://notification-engine:4101",
+            NOTIFICATION_ENGINE_URL: "http://notification-service:4101",
         },
     },
     "api-gateway": {
@@ -189,11 +189,11 @@ const serviceRegistry = {
         layer: "shared",
         label: "API Gateway",
         routes: ["/api/v1/citizen-portal"],
-        dependsOn: ["auth-gateway", "resource-module", "billing-invoicing"],
+        dependsOn: ["auth-service", "resource-module", "invoice-service"],
         extraEnv: {
-            AUTH_GATEWAY_URL: "http://auth-gateway:4100",
+            AUTH_GATEWAY_URL: "http://auth-service:4100",
             RESOURCE_MODULE_URL: "http://resource-module:4104",
-            BILLING_INVOICING_URL: "http://billing-invoicing:4102",
+            BILLING_INVOICING_URL: "http://invoice-service:4102",
         },
     },
 
@@ -224,7 +224,7 @@ const serviceRegistry = {
 
 // ─── Derived Types ──────────────────────────────────────────
 
-/** Union of all valid service keys (e.g., "auth-gateway" | "resource-module" | ...) */
+/** Union of all valid service keys (e.g., "auth-service" | "resource-module" | ...) */
 export type ServiceKey = keyof typeof serviceRegistry;
 
 /** Union of all service ports (e.g., 4100 | 4101 | 4102 | ...) */
@@ -263,7 +263,7 @@ type AssertUniquePorts = {
 
 1. Create `products/<new-product>/infra/service-registry.ts`.
 2. Copy the `ServiceDefinition` interface (it's the same for every product).
-3. Define services starting with platform (auth-gateway is always present), then shared, then domain.
+3. Define services starting with platform (auth-service is always present), then shared, then domain.
 4. Assign unique ports (convention: 4100–4199 for platform, 4200–4299 for shared, 4300+ for domain).
 5. Set `extraEnv` for any service that calls another service's HTTP API.
 6. Set `dependsOn` for services that need another service to be running before they can start.
@@ -283,7 +283,7 @@ type AssertUniquePorts = {
     routes: ["/api/v1/new-resources"],
     extraEnv: {
         // Only if this service calls another service's API
-        ASSESSMENT_ROLL_URL: "http://assessment-roll:4104",
+        ORDER_MANAGEMENT_URL: "http://order-management:4104",
     },
 },
 ```

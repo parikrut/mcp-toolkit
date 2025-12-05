@@ -6,7 +6,7 @@
 **Layer:** Events / Infrastructure  
 **File Location:** `modules/domain/<domain>/<module>/src/events/subscribers/<source-module>.subscriber.ts`  
 **Naming Convention:** `<SourceModule>Subscriber` (e.g., `AssessmentSubscriber`, `PaymentSubscriber`)  
-**Reference Implementation:** `modules/domain/revenue/tax-billing-instalment/src/events/subscribers/assessment.subscriber.ts`
+**Reference Implementation:** `modules/domain/revenue/billing/src/events/subscribers/assessment.subscriber.ts`
 
 ## 2. Overview
 
@@ -18,14 +18,14 @@ Key design principles:
 
 - **Payload typed as `unknown`** — The handler parameter is always `@Payload() data: unknown`. The subscriber does NOT trust the incoming data. The very first line of every handler must Zod-parse the payload, which simultaneously validates the data and narrows the TypeScript type.
 - **Zod validation at the boundary** — `EventPayloadSchema.parse(data)` is the first operation. If the payload doesn't match the contract, the parse throws, the message is nacked, and it routes to the DLQ.
-- **Single-source subscribers** — Each subscriber class handles events from ONE source module. If your module listens to events from assessment-roll AND payment, you create two separate subscriber classes: `AssessmentSubscriber` and `PaymentSubscriber`.
+- **Single-source subscribers** — Each subscriber class handles events from ONE source module. If your module listens to events from order-management AND payment, you create two separate subscriber classes: `AssessmentSubscriber` and `PaymentSubscriber`.
 - **Error handling via throw** — If business logic fails, the handler throws. NestJS's RMQ transport catches the error and nacks the message, routing it to the dead-letter queue (DLQ). You never manually ack/nack.
 - **Delegation to services** — The subscriber itself contains zero business logic. It validates the payload, calls a service method, and logs the result. All business logic lives in the service layer.
 
 ## 3. Rules
 
 1. **MUST** be decorated with `@Controller()` — NOT `@Injectable()`. NestJS requires `@Controller()` for `@EventPattern()` to function.
-2. **MUST** use `@EventPattern(RoutingKeyEnum.EVENT_NAME)` on each handler method — import the routing key constant from `@civic/contracts`.
+2. **MUST** use `@EventPattern(RoutingKeyEnum.EVENT_NAME)` on each handler method — import the routing key constant from `@myorg/contracts`.
 3. **MUST** type the handler parameter as `@Payload() data: unknown` — never trust incoming event data with a concrete type.
 4. **MUST** Zod-parse the payload as the **first operation** in every handler: `const event = EventPayloadSchema.parse(data)`.
 5. **MUST** wrap business logic in try/catch — log the error with full context, then re-throw so the message routes to DLQ.
@@ -35,12 +35,12 @@ Key design principles:
 9. **MUST** log at the start of processing (with correlation ID and entity ID) and after successful completion.
 10. **MUST** log errors with the full error object, entity ID, and correlation ID before re-throwing.
 11. **MUST** handle events from only ONE source module per subscriber class.
-12. **MUST** import event routing keys and payload schemas from `@civic/contracts`.
+12. **MUST** import event routing keys and payload schemas from `@myorg/contracts`.
 13. **MUST NOT** contain any business logic — delegate everything to the service layer.
 14. **MUST NOT** manually ack or nack messages — NestJS handles this automatically (success = ack, throw = nack → DLQ).
 15. **MUST NOT** catch errors and silently swallow them — always re-throw after logging so failed messages reach the DLQ for investigation.
 16. **MUST NOT** use `@MessagePattern()` — that's for request/response. Events are fire-and-forget, so use `@EventPattern()`.
-17. **SHOULD** name handler methods as `handle<Entity><Action>` (e.g., `handleAssessmentRollCreated`, `handlePaymentReceived`).
+17. **SHOULD** name handler methods as `handle<Entity><Action>` (e.g., `handleOrderManagementCreated`, `handlePaymentReceived`).
 18. **SHOULD** group all subscribers for a module in the `events/subscribers/` directory.
 
 ## 4. Structure
@@ -60,13 +60,13 @@ modules/domain/<domain>/<module>/
 // ─── Imports ─────────────────────────────────────────────────────────
 import { Controller } from "@nestjs/common";                       // Controller decorator
 import { EventPattern, Payload } from "@nestjs/microservices";     // Event binding
-import { createLogger } from "@civic/common";                      // Structured logger
+import { createLogger } from "@myorg/common";                      // Structured logger
 import {                                                           // Event contracts
     SourceModuleEvents,                                            // Routing key enum
     EntityCreatedSchema,                                           // Zod schemas
     EntityUpdatedSchema,
     EntityDeletedSchema,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 import { LocalService } from "../../services/local.service";       // Business logic
 
 // ─── Constants ───────────────────────────────────────────────────────
@@ -102,13 +102,13 @@ The subscriber must be registered as a **controller** in the NestJS module:
 ```typescript
 import { Module } from "@nestjs/common";
 import { AssessmentSubscriber } from "./events/subscribers/assessment.subscriber";
-import { TaxBillingService } from "./services/tax-billing.service";
+import { BillingService } from "./services/billing.service";
 
 @Module({
     controllers: [AssessmentSubscriber], // Subscribers are controllers!
-    providers: [TaxBillingService],
+    providers: [BillingService],
 })
-export class TaxBillingInstalmentModule {}
+export class BillingModule {}
 ```
 
 ### Microservice Bootstrap
@@ -128,11 +128,11 @@ async function bootstrap() {
         transport: Transport.RMQ,
         options: {
             urls: [process.env.RABBITMQ_URL!],
-            queue: "tax-billing-instalment-events",
+            queue: "billing-events",
             queueOptions: {
                 durable: true,
                 arguments: {
-                    "x-dead-letter-exchange": "civic.dlx",
+                    "x-dead-letter-exchange": "myorg.dlx",
                 },
             },
             noAck: false,
@@ -148,45 +148,45 @@ bootstrap();
 
 ## 5. Example Implementation
 
-### Full Subscriber — Assessment Roll Events in Tax Billing Module
+### Full Subscriber — Order Record Events in Billing Module
 
 ```typescript
 import { Controller } from "@nestjs/common";
 import { EventPattern, Payload } from "@nestjs/microservices";
-import { createLogger } from "@civic/common";
+import { createLogger } from "@myorg/common";
 import {
-    AssessmentRollEvents,
-    AssessmentRollCreatedSchema,
-    AssessmentRollUpdatedSchema,
-    AssessmentRollDeletedSchema,
-    AssessmentRollStatusChangedSchema,
-} from "@civic/contracts";
-import { TaxBillingService } from "../../services/tax-billing.service";
-import { InstalmentService } from "../../services/instalment.service";
+    OrderManagementEvents,
+    OrderManagementCreatedSchema,
+    OrderManagementUpdatedSchema,
+    OrderManagementDeletedSchema,
+    OrderManagementStatusChangedSchema,
+} from "@myorg/contracts";
+import { BillingService } from "../../services/billing.service";
+import { InstalmentService } from "../../services/installment.service";
 
 const logger = createLogger({ module: "assessment-subscriber" });
 
 @Controller()
 export class AssessmentSubscriber {
     constructor(
-        private readonly taxBillingService: TaxBillingService,
-        private readonly instalmentService: InstalmentService,
+        private readonly taxBillingService: BillingService,
+        private readonly installmentService: InstalmentService,
     ) {}
 
     /**
-     * Handles new assessment roll creation.
-     * Creates a corresponding tax billing record for the assessed property.
+     * Handles new order record creation.
+     * Creates a corresponding billing record for the target record.
      */
-    @EventPattern(AssessmentRollEvents.CREATED)
-    async handleAssessmentRollCreated(@Payload() data: unknown): Promise<void> {
-        const event = AssessmentRollCreatedSchema.parse(data);
+    @EventPattern(OrderManagementEvents.CREATED)
+    async handleOrderManagementCreated(@Payload() data: unknown): Promise<void> {
+        const event = OrderManagementCreatedSchema.parse(data);
         logger.info(
             {
                 correlationId: event.correlationId,
                 assessmentRollId: event.assessmentRollId,
                 propertyId: event.propertyId,
             },
-            "Processing AssessmentRollCreated event",
+            "Processing OrderManagementCreated event",
         );
 
         try {
@@ -213,25 +213,25 @@ export class AssessmentSubscriber {
                     propertyId: event.propertyId,
                     correlationId: event.correlationId,
                 },
-                "Failed to create tax billing from assessment",
+                "Failed to create billing from assessment",
             );
             throw error; // Message routes to DLQ
         }
     }
 
     /**
-     * Handles assessment roll updates.
-     * Recalculates the tax billing amount based on the updated assessment value.
+     * Handles order record updates.
+     * Recalculates the billing amount based on the updated assessment value.
      */
-    @EventPattern(AssessmentRollEvents.UPDATED)
-    async handleAssessmentRollUpdated(@Payload() data: unknown): Promise<void> {
-        const event = AssessmentRollUpdatedSchema.parse(data);
+    @EventPattern(OrderManagementEvents.UPDATED)
+    async handleOrderManagementUpdated(@Payload() data: unknown): Promise<void> {
+        const event = OrderManagementUpdatedSchema.parse(data);
         logger.info(
             {
                 correlationId: event.correlationId,
                 assessmentRollId: event.assessmentRollId,
             },
-            "Processing AssessmentRollUpdated event",
+            "Processing OrderManagementUpdated event",
         );
 
         try {
@@ -252,25 +252,25 @@ export class AssessmentSubscriber {
                     assessmentRollId: event.assessmentRollId,
                     correlationId: event.correlationId,
                 },
-                "Failed to recalculate tax billing from updated assessment",
+                "Failed to recalculate billing from updated assessment",
             );
             throw error;
         }
     }
 
     /**
-     * Handles assessment roll deletion.
-     * Deactivates the corresponding tax billing record.
+     * Handles order record deletion.
+     * Deactivates the corresponding billing record.
      */
-    @EventPattern(AssessmentRollEvents.DELETED)
-    async handleAssessmentRollDeleted(@Payload() data: unknown): Promise<void> {
-        const event = AssessmentRollDeletedSchema.parse(data);
+    @EventPattern(OrderManagementEvents.DELETED)
+    async handleOrderManagementDeleted(@Payload() data: unknown): Promise<void> {
+        const event = OrderManagementDeletedSchema.parse(data);
         logger.info(
             {
                 correlationId: event.correlationId,
                 assessmentRollId: event.assessmentRollId,
             },
-            "Processing AssessmentRollDeleted event",
+            "Processing OrderManagementDeleted event",
         );
 
         try {
@@ -290,19 +290,19 @@ export class AssessmentSubscriber {
                     assessmentRollId: event.assessmentRollId,
                     correlationId: event.correlationId,
                 },
-                "Failed to deactivate tax billing for deleted assessment",
+                "Failed to deactivate billing for deleted assessment",
             );
             throw error;
         }
     }
 
     /**
-     * Handles assessment roll status changes (DRAFT → CERTIFIED → FINAL).
-     * When status becomes FINAL, generates instalment schedule.
+     * Handles order record status changes (DRAFT → CERTIFIED → FINAL).
+     * When status becomes FINAL, generates installment schedule.
      */
-    @EventPattern(AssessmentRollEvents.STATUS_CHANGED)
-    async handleAssessmentRollStatusChanged(@Payload() data: unknown): Promise<void> {
-        const event = AssessmentRollStatusChangedSchema.parse(data);
+    @EventPattern(OrderManagementEvents.STATUS_CHANGED)
+    async handleOrderManagementStatusChanged(@Payload() data: unknown): Promise<void> {
+        const event = OrderManagementStatusChangedSchema.parse(data);
         logger.info(
             {
                 correlationId: event.correlationId,
@@ -310,13 +310,13 @@ export class AssessmentSubscriber {
                 previousStatus: event.previousStatus,
                 newStatus: event.newStatus,
             },
-            "Processing AssessmentRollStatusChanged event",
+            "Processing OrderManagementStatusChanged event",
         );
 
         try {
-            // Only generate instalments when assessment is finalized
+            // Only generate installments when assessment is finalized
             if (event.newStatus === "FINAL") {
-                await this.instalmentService.generateInstalmentSchedule({
+                await this.installmentService.generateInstalmentSchedule({
                     assessmentRollId: event.assessmentRollId,
                     correlationId: event.correlationId,
                 });
@@ -331,7 +331,7 @@ export class AssessmentSubscriber {
                         assessmentRollId: event.assessmentRollId,
                         newStatus: event.newStatus,
                     },
-                    "Status change noted — no instalment action required",
+                    "Status change noted — no installment action required",
                 );
             }
         } catch (error) {
@@ -342,7 +342,7 @@ export class AssessmentSubscriber {
                     newStatus: event.newStatus,
                     correlationId: event.correlationId,
                 },
-                "Failed to process assessment roll status change",
+                "Failed to process order record status change",
             );
             throw error;
         }
@@ -357,8 +357,8 @@ For modules that only need to react to one event from a source:
 ```typescript
 import { Controller } from "@nestjs/common";
 import { EventPattern, Payload } from "@nestjs/microservices";
-import { createLogger } from "@civic/common";
-import { PaymentEvents, PaymentReceivedSchema } from "@civic/contracts";
+import { createLogger } from "@myorg/common";
+import { PaymentEvents, PaymentReceivedSchema } from "@myorg/contracts";
 import { AccountService } from "../../services/account.service";
 
 const logger = createLogger({ module: "payment-subscriber" });
@@ -412,20 +412,20 @@ export class PaymentSubscriber {
 ```typescript
 import { Test, TestingModule } from "@nestjs/testing";
 import { AssessmentSubscriber } from "./assessment.subscriber";
-import { TaxBillingService } from "../../services/tax-billing.service";
-import { InstalmentService } from "../../services/instalment.service";
+import { BillingService } from "../../services/billing.service";
+import { InstalmentService } from "../../services/installment.service";
 
 describe("AssessmentSubscriber", () => {
     let subscriber: AssessmentSubscriber;
-    let taxBillingService: jest.Mocked<TaxBillingService>;
-    let instalmentService: jest.Mocked<InstalmentService>;
+    let taxBillingService: jest.Mocked<BillingService>;
+    let installmentService: jest.Mocked<InstalmentService>;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [AssessmentSubscriber],
             providers: [
                 {
-                    provide: TaxBillingService,
+                    provide: BillingService,
                     useValue: {
                         createBillingFromAssessment: jest.fn(),
                         recalculateBilling: jest.fn(),
@@ -442,11 +442,11 @@ describe("AssessmentSubscriber", () => {
         }).compile();
 
         subscriber = module.get(AssessmentSubscriber);
-        taxBillingService = module.get(TaxBillingService);
-        instalmentService = module.get(InstalmentService);
+        taxBillingService = module.get(BillingService);
+        installmentService = module.get(InstalmentService);
     });
 
-    it("should create tax billing from assessment roll created event", async () => {
+    it("should create billing from order record created event", async () => {
         const payload = {
             assessmentRollId: "roll-123",
             propertyId: "prop-456",
@@ -456,7 +456,7 @@ describe("AssessmentSubscriber", () => {
             timestamp: new Date().toISOString(),
         };
 
-        await subscriber.handleAssessmentRollCreated(payload);
+        await subscriber.handleOrderManagementCreated(payload);
 
         expect(taxBillingService.createBillingFromAssessment).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -468,7 +468,7 @@ describe("AssessmentSubscriber", () => {
     });
 
     it("should throw and route to DLQ on invalid payload", async () => {
-        await expect(subscriber.handleAssessmentRollCreated({ invalid: "data" })).rejects.toThrow();
+        await expect(subscriber.handleOrderManagementCreated({ invalid: "data" })).rejects.toThrow();
     });
 
     it("should throw and route to DLQ on service failure", async () => {
@@ -485,12 +485,12 @@ describe("AssessmentSubscriber", () => {
             timestamp: new Date().toISOString(),
         };
 
-        await expect(subscriber.handleAssessmentRollCreated(payload)).rejects.toThrow(
+        await expect(subscriber.handleOrderManagementCreated(payload)).rejects.toThrow(
             "Database connection lost",
         );
     });
 
-    it("should generate instalments when status changes to FINAL", async () => {
+    it("should generate installments when status changes to FINAL", async () => {
         const payload = {
             assessmentRollId: "roll-123",
             previousStatus: "CERTIFIED",
@@ -499,14 +499,14 @@ describe("AssessmentSubscriber", () => {
             timestamp: new Date().toISOString(),
         };
 
-        await subscriber.handleAssessmentRollStatusChanged(payload);
+        await subscriber.handleOrderManagementStatusChanged(payload);
 
-        expect(instalmentService.generateInstalmentSchedule).toHaveBeenCalledWith(
+        expect(installmentService.generateInstalmentSchedule).toHaveBeenCalledWith(
             expect.objectContaining({ assessmentRollId: "roll-123" }),
         );
     });
 
-    it("should NOT generate instalments for non-FINAL status changes", async () => {
+    it("should NOT generate installments for non-FINAL status changes", async () => {
         const payload = {
             assessmentRollId: "roll-123",
             previousStatus: "DRAFT",
@@ -515,9 +515,9 @@ describe("AssessmentSubscriber", () => {
             timestamp: new Date().toISOString(),
         };
 
-        await subscriber.handleAssessmentRollStatusChanged(payload);
+        await subscriber.handleOrderManagementStatusChanged(payload);
 
-        expect(instalmentService.generateInstalmentSchedule).not.toHaveBeenCalled();
+        expect(installmentService.generateInstalmentSchedule).not.toHaveBeenCalled();
     });
 });
 ```

@@ -4,7 +4,7 @@
 
 **Type:** Code Generation Script  
 **Layer:** Infrastructure / Build Tooling  
-**Reference Implementation:** `products/property-tax/infra/generate.ts`
+**Reference Implementation:** `products/my-product/infra/generate.ts`
 
 ## 2. Overview
 
@@ -317,7 +317,7 @@ function generateInitSql(): string {
         .map((db) => `CREATE DATABASE ${db};`)
         .join("\n");
     const grants = databases
-        .map((db) => `GRANT ALL PRIVILEGES ON DATABASE ${db} TO civic;`)
+        .map((db) => `GRANT ALL PRIVILEGES ON DATABASE ${db} TO myorg;`)
         .join("\n");
 
     return `-- ─── Product — Database Initialization ───────────────────────
@@ -328,7 +328,7 @@ function generateInitSql(): string {
 
 ${creates}
 
--- Grant full access to the civic user
+-- Grant full access to the db user
 ${grants}
 `;
 }
@@ -367,7 +367,7 @@ set -e
 SCRIPT_DIR="${$}(cd "${$}(dirname "${$}{BASH_SOURCE[0]}")" && pwd)"
 cd "${$}SCRIPT_DIR"
 
-echo "🏛️  Civic Product — Development Environment"
+echo "🏛️  My Product — Development Environment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -428,8 +428,8 @@ echo ""
 ${swaggerLines}
 echo ""
 echo "  Prisma Studio:     http://localhost:5555"
-echo "  PostgreSQL:        localhost:5433  (civic / civic)"
-echo "  RabbitMQ:          http://localhost:15673  (civic / civic)"
+echo "  PostgreSQL:        localhost:5433  ( myorg / secret)"
+echo "  RabbitMQ:          http://localhost:15673  ( myorg / secret)"
 echo "  Redis:             localhost:6380"
 echo ""
 echo "Useful commands:"
@@ -467,7 +467,7 @@ console.log("\\nDone. Commit the generated files.");
 ```nginx
     # Auth Gateway — :4100
     location /api/v1/auth {
-        proxy_pass http://auth-gateway:4100;
+        proxy_pass http://auth-service:4100;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -475,7 +475,7 @@ console.log("\\nDone. Commit the generated files.");
     }
 
     location /api/v1/users {
-        proxy_pass http://auth-gateway:4100;
+        proxy_pass http://auth-service:4100;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -492,20 +492,20 @@ console.log("\\nDone. Commit the generated files.");
 --
 -- Creates one database per module (DB-per-service pattern)
 
-CREATE DATABASE auth_gateway;
-CREATE DATABASE notification_engine;
+CREATE DATABASE auth_service;
+CREATE DATABASE notification_service;
 CREATE DATABASE audit_logging;
-CREATE DATABASE billing_invoicing;
+CREATE DATABASE invoice_service;
 CREATE DATABASE resource_module;
 CREATE DATABASE another_module;
 
--- Grant full access to the civic user
-GRANT ALL PRIVILEGES ON DATABASE auth_gateway TO civic;
-GRANT ALL PRIVILEGES ON DATABASE notification_engine TO civic;
-GRANT ALL PRIVILEGES ON DATABASE audit_logging TO civic;
-GRANT ALL PRIVILEGES ON DATABASE billing_invoicing TO civic;
-GRANT ALL PRIVILEGES ON DATABASE resource_module TO civic;
-GRANT ALL PRIVILEGES ON DATABASE another_module TO civic;
+-- Grant full access to the db user
+GRANT ALL PRIVILEGES ON DATABASE auth_service TO myorg;
+GRANT ALL PRIVILEGES ON DATABASE notification_service TO myorg;
+GRANT ALL PRIVILEGES ON DATABASE audit_logging TO myorg;
+GRANT ALL PRIVILEGES ON DATABASE invoice_service TO myorg;
+GRANT ALL PRIVILEGES ON DATABASE resource_module TO myorg;
+GRANT ALL PRIVILEGES ON DATABASE another_module TO myorg;
 ```
 
 **Adapting for a new product:**

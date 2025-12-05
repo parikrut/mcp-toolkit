@@ -12,7 +12,7 @@ This pattern defines the `DistributedLockService` — a Redis-based distributed 
 
 ## 2. Overview
 
-When a NestJS service is scaled to multiple replicas (e.g., 3 pods in Kubernetes), NestJS `@Cron()` decorators fire independently on **every** replica. Without coordination, a CRON job that recalculates property tax penalties would run 3 times simultaneously — causing duplicate penalties, race conditions, and data corruption.
+When a NestJS service is scaled to multiple replicas (e.g., 3 pods in Kubernetes), NestJS `@Cron()` decorators fire independently on **every** replica. Without coordination, a CRON job that recalculates product penalties would run 3 times simultaneously — causing duplicate penalties, race conditions, and data corruption.
 
 `DistributedLockService` solves this with **Redis-based mutual exclusion**:
 
@@ -321,11 +321,11 @@ export class DistributedLockModule {}
 ### Registering in a Service Module
 
 ```typescript
-// modules/domain/property-tax/src/app.module.ts
+// modules/domain/my-product/src/app.module.ts
 
 import { Module } from "@nestjs/common";
 import { ScheduleModule } from "@nestjs/schedule";
-import { DistributedLockModule } from "@civic/common";
+import { DistributedLockModule } from "@myorg/common";
 import { PenaltyScheduler } from "./schedulers/penalty.scheduler";
 import { PenaltyService } from "./services/penalty.service";
 
@@ -342,11 +342,11 @@ export class AppModule {}
 ### Using in a CRON Scheduler
 
 ```typescript
-// modules/domain/property-tax/src/schedulers/penalty.scheduler.ts
+// modules/domain/my-product/src/schedulers/penalty.scheduler.ts
 
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { DistributedLockService } from "@civic/common";
+import { DistributedLockService } from "@myorg/common";
 import { PenaltyService } from "../services/penalty.service";
 
 @Injectable()
@@ -360,7 +360,7 @@ export class PenaltyScheduler {
 
     /**
      * Runs daily at 2:00 AM. Calculates late-payment penalties for all
-     * overdue property tax accounts.
+     * overdue product accounts.
      *
      * Uses a distributed lock to ensure exactly one replica runs this.
      * TTL is 600 seconds (10 minutes) — the job typically completes in 2-3 minutes,
@@ -411,10 +411,10 @@ export class PenaltyScheduler {
 ### Using for a One-Time Migration
 
 ```typescript
-// modules/domain/property-tax/src/services/migration.service.ts
+// modules/domain/my-product/src/services/migration.service.ts
 
 import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
-import { DistributedLockService } from "@civic/common";
+import { DistributedLockService } from "@myorg/common";
 
 @Injectable()
 export class MigrationService implements OnApplicationBootstrap {

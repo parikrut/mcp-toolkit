@@ -13,13 +13,13 @@ receives its slice of state plus `onNext` / `onBack` callbacks as props.
 ## 2. Overview
 
 Wizards are used for complex multi-step workflows where a single form would be
-overwhelming. Examples include payment processing, PAP enrollment, and data
+overwhelming. Examples include payment, PAP enrollment, and data
 import flows.
 
 | Layer               | Responsibility                                      |
 | ------------------- | --------------------------------------------------- |
 | **Wizard Page**     | Step state, shared data state, mutation, navigation |
-| **StepIndicator**   | Visual progress bar (`@civic/ui`)                   |
+| **StepIndicator**   | Visual progress bar (`@myorg/ui`)                   |
 | **Step Components** | Individual step UI, receives props from wizard page |
 
 Data flows **top-down only**: the wizard page holds all state and passes it
@@ -37,7 +37,7 @@ and then advances to a confirmation / receipt step.
    Use `next()` and `prev()` helper functions.
 3. **`STEPS` constant array** defines step labels:
    `const STEPS = ["Search", "Details", "Review", "Confirmed"]`.
-4. **`StepIndicator`** from `@civic/ui` renders the progress bar:
+4. **`StepIndicator`** from `@myorg/ui` renders the progress bar:
    `<StepIndicator steps={STEPS} currentStep={step} />`.
 5. **Each step is a separate component** in the feature folder. Each step
    receives only the props it needs — never the entire wizard state.
@@ -59,7 +59,7 @@ and then advances to a confirmation / receipt step.
 ```
 src/pages/<workflow>.tsx
 ├── import { useState } from "react"
-├── import { Card, StepIndicator } from "@civic/ui"
+├── import { Card, StepIndicator } from "@myorg/ui"
 ├── import { use<Mutation>, useToast } from "../hooks"
 ├── import { Step1, Step2, Step3, Step4 } from "../features/<workflow>"
 │
@@ -113,7 +113,7 @@ src/features/<workflow>/
 ```tsx
 // src/pages/payment-wizard.tsx
 import { useState } from "react";
-import { Card, StepIndicator } from "@civic/ui";
+import { Card, StepIndicator } from "@myorg/ui";
 import { useApplyPayment, useToast } from "../hooks";
 import {
     PropertySearchStep,

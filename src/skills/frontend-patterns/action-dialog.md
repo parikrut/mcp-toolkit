@@ -6,7 +6,7 @@
 
 An **Action Dialog** is a lightweight modal component that confirms or
 collects minimal input for a single mutation (approve, reject, process,
-cancel, waive, etc.). It combines `Modal` from `@civic/ui` with a small
+cancel, waive, etc.). It combines `Modal` from `@myorg/ui` with a small
 form (1-2 inputs), a mutation hook, and toast feedback. Multiple related
 action dialogs are co-located in a single file.
 
@@ -18,7 +18,7 @@ or targeted operation (approve a refund, waive a penalty, cancel a plan).
 
 | Part               | Description                                         |
 | ------------------ | --------------------------------------------------- |
-| **Modal wrapper**  | Uses `Modal` from `@civic/ui`, controlled by parent |
+| **Modal wrapper**  | Uses `Modal` from `@myorg/ui`, controlled by parent |
 | **Context line**   | Brief summary of the entity being acted upon        |
 | **Input(s)**       | 0-2 fields (reason, approver name, cheque number)   |
 | **Action buttons** | Cancel + primary action button with loading state   |
@@ -59,10 +59,10 @@ exports.
 src/features/<domain>/<entity>-action-dialogs.tsx
 │
 ├── import { useState } from "react"
-├── import { Button, Input, Modal, extractApiError, formatCurrency } from "@civic/ui"
+├── import { Button, Input, Modal, extractApiError, formatCurrency } from "@myorg/ui"
 ├── import { use<Action> } from "../../hooks/…"
 ├── import { useToast } from "../../hooks/use-toast"
-├── import type { <Entity> } from "@civic/contracts"
+├── import type { <Entity> } from "@myorg/contracts"
 │
 ├── /* ── Approve Dialog ── */
 │   interface <Entity>ApproveDialogProps {
@@ -109,10 +109,10 @@ src/features/<domain>/<entity>-action-dialogs.tsx
 ```tsx
 // src/features/refunds/refund-action-dialogs.tsx
 import { useState } from "react";
-import { Button, Input, Modal, extractApiError, formatCurrency } from "@civic/ui";
+import { Button, Input, Modal, extractApiError, formatCurrency } from "@myorg/ui";
 import { useApproveRefund, useRejectRefund } from "../../hooks/use-refunds";
 import { useToast } from "../../hooks/use-toast";
-import type { Refund } from "@civic/contracts";
+import type { Refund } from "@myorg/contracts";
 
 /* ── Approve Dialog ────────────────────────────── */
 

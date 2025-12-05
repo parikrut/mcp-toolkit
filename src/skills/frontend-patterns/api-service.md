@@ -125,7 +125,7 @@ export function parseResponse<T>(schema: ZodSchema<T>, data: unknown): T {
 // src/lib/use-typed-query.ts
 import { useQuery } from "@tanstack/react-query";
 import { type ZodSchema } from "zod";
-import type { PaginationMeta } from "@civic/contracts";
+import type { PaginationMeta } from "@myorg/contracts";
 import { api } from "../services/api";
 import { parseResponse } from "./parse-response";
 

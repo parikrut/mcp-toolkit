@@ -1,6 +1,6 @@
 # Frontend Patterns
 
-> Canonical reference for building pages and features in the Civic Modules frontend.
+> Canonical reference for building pages and features in your frontend application.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
 
@@ -30,7 +30,7 @@ the **Nordic minimal** design system.
 └──────────────────────────────────────────────────────────┘
           │               │               │
       URL State      Data Hooks      Contracts
-       (nuqs)     (TanStack Query)  (@civic/contracts)
+       (nuqs)     (TanStack Query)  (@myorg/contracts)
           │               │               │
           └───────┬───────┘               │
                   ▼                       │
@@ -82,7 +82,7 @@ the **Nordic minimal** design system.
 ## File Map (Properties example)
 
 ```
-apps/property-tax-web/src/
+apps/my-app-web/src/
 ├── main.tsx                        → app-shell-router.md
 ├── App.tsx                         → app-shell-router.md, auth-protected-route.md
 ├── pages/

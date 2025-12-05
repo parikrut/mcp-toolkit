@@ -4,11 +4,11 @@
 
 **Type:** REST API Controller  
 **Layer:** Presentation / HTTP boundary  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/src/controllers/property.controller.ts`
+**Reference Implementation:** `modules/domain/revenue/order-management/src/controllers/property.controller.ts`
 
 ## 2. Overview
 
-Controllers are the HTTP entry point for every NestJS module. They receive incoming requests, validate inputs with Zod schemas from `@civic/contracts`, and delegate all business logic to an injected service. Controllers contain **zero** business logic — they are thin adapters that translate HTTP semantics (status codes, parameter extraction, auth decorators) into service calls.
+Controllers are the HTTP entry point for every NestJS module. They receive incoming requests, validate inputs with Zod schemas from `@myorg/contracts`, and delegate all business logic to an injected service. Controllers contain **zero** business logic — they are thin adapters that translate HTTP semantics (status codes, parameter extraction, auth decorators) into service calls.
 
 Every route is decorated with `@ResponseSchema()` so the `ResponseValidationInterceptor` can validate outgoing payloads against the contract before they leave the process. All parameters and bodies are typed as `unknown` at the decorator level and immediately parsed with the corresponding Zod schema inline. This guarantees that any malformed input is rejected with a 422 before it reaches the service layer.
 
@@ -44,8 +44,8 @@ modules/domain/<domain>/<module>/src/controllers/
 | ------------------------------------------------------------------------------------ | ----------------------------------- |
 | `Controller`, `Get`, `Post`, `Patch`, `Delete`, `Query`, `Param`, `Body`, `HttpCode` | `@nestjs/common`                    |
 | `ApiTags`, `ApiBearerAuth`                                                           | `@nestjs/swagger`                   |
-| `Roles`, `AuditAction`, `CurrentUser`, `ResponseSchema`, `RequestUser`               | `@civic/common`                     |
-| All Zod schemas and inferred types                                                   | `@civic/contracts`                  |
+| `Roles`, `AuditAction`, `CurrentUser`, `ResponseSchema`, `RequestUser`               | `@myorg/common`                     |
+| All Zod schemas and inferred types                                                   | `@myorg/contracts`                  |
 | Service class                                                                        | Relative import from `../services/` |
 
 **Decorator stacking order (top → bottom on each route):**
@@ -62,7 +62,7 @@ modules/domain/<domain>/<module>/src/controllers/
 ```typescript
 import { Controller, Get, Post, Patch, Delete, Query, Param, Body, HttpCode } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
-import { Roles, AuditAction, CurrentUser, ResponseSchema, type RequestUser } from "@civic/common";
+import { Roles, AuditAction, CurrentUser, ResponseSchema, type RequestUser } from "@myorg/common";
 import {
     ResourcePathParamsSchema,
     ResourceQuerySchema,
@@ -70,7 +70,7 @@ import {
     UpdateResourceBodySchema,
     ResourceResponseSchema,
     PaginatedResourceResponseSchema,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 import { ResourceService } from "../services/resource.service";
 
 @ApiTags("Resources")

@@ -177,7 +177,7 @@ import {
     ApiVersionMiddleware,
     CorrelationIdMiddleware,
     RequestLoggingMiddleware,
-} from "@civic/common";
+} from "@myorg/common";
 
 @Module({
     imports: [

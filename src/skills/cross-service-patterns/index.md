@@ -1,7 +1,7 @@
 # Cross-Service Patterns
 
 > Canonical reference for service-to-service HTTP communication, response
-> envelope handling, and distributed coordination in the Civic Modules platform.
+> envelope handling, and distributed coordination in your microservices platform.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
 

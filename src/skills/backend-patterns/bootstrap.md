@@ -6,18 +6,18 @@
 **Layer:** Infrastructure / Bootstrap  
 **Reference Implementations:**
 
-- `modules/domain/revenue/assessment-roll/src/main.ts`
+- `modules/domain/revenue/order-management/src/main.ts`
 - `packages/common/src/bootstrap.ts`
 
 ## 2. Overview
 
-Every microservice has a `main.ts` entry point that is intentionally minimal — a single call to `bootstrapModule()` from `@civic/common`. This shared bootstrap function handles all NestJS application setup: HTTP adapter, security middleware, global guards, interceptors, exception filters, Swagger documentation, and RabbitMQ microservice transport.
+Every microservice has a `main.ts` entry point that is intentionally minimal — a single call to `bootstrapModule()` from `@myorg/common`. This shared bootstrap function handles all NestJS application setup: HTTP adapter, security middleware, global guards, interceptors, exception filters, Swagger documentation, and RabbitMQ microservice transport.
 
 The `main.ts` file provides only the module-specific configuration: the root module class, the port number, the RMQ queue name, and Swagger metadata. Everything else is standardised across all services.
 
 **Port allocation:** Each service is assigned a unique port in the 4100–4199 range. Port numbers come from the service registry and must not collide.
 
-**Queue naming:** The RMQ queue name matches the service name in kebab-case (e.g., `assessment-roll`, `tax-billing`).
+**Queue naming:** The RMQ queue name matches the service name in kebab-case (e.g., `order-management`, `billing`).
 
 ## 3. Rules
 
@@ -60,7 +60,7 @@ packages/common/src/
 ### main.ts (per-service entry point)
 
 ```typescript
-import { bootstrapModule } from "@civic/common";
+import { bootstrapModule } from "@myorg/common";
 import { AppModule } from "./app.module";
 
 bootstrapModule({
@@ -81,7 +81,7 @@ That's it. The entire `main.ts` file is 12 lines.
 
 ---
 
-### bootstrapModule() (shared in @civic/common)
+### bootstrapModule() (shared in @myorg/common)
 
 ```typescript
 import { NestFactory } from "@nestjs/core";

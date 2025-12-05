@@ -4,32 +4,32 @@
 
 **Type:** Custom RabbitMQ Client (Transport Override)  
 **Layer:** Infrastructure / Messaging  
-**File Location:** `packages/common/src/events/civic-rmq-client.ts`  
-**Naming Convention:** `CivicRmqClient` (singleton — one per platform)  
-**Reference Implementation:** `packages/common/src/events/civic-rmq-client.ts`
+**File Location:** `packages/common/src/events/custom-rmq-client.ts`  
+**Naming Convention:** `CustomRmqClient` (singleton — one per platform)  
+**Reference Implementation:** `packages/common/src/events/custom-rmq-client.ts`
 
 ## 2. Overview
 
-The `CivicRmqClient` is a custom extension of NestJS's built-in `ClientRMQ` class. It overrides the `dispatchEvent()` method to enable **topic-based exchange routing** instead of the default direct-to-queue behavior.
+The `CustomRmqClient` is a custom extension of NestJS's built-in `ClientRMQ` class. It overrides the `dispatchEvent()` method to enable **topic-based exchange routing** instead of the default direct-to-queue behavior.
 
 ### Why This Is Needed
 
-NestJS's default `ClientRMQ` uses `channel.sendToQueue()` when you call `client.emit()`. This sends the message directly to a specific queue — a point-to-point pattern. However, the civic platform requires **topic exchange routing**, where:
+NestJS's default `ClientRMQ` uses `channel.sendToQueue()` when you call `client.emit()`. This sends the message directly to a specific queue — a point-to-point pattern. However, the  myorg platform requires **topic exchange routing**, where:
 
 1. Messages are published to an **exchange** (not a queue directly)
 2. The exchange uses the **routing key** (the event name) to route messages
 3. Multiple queues can **bind** to the exchange with routing key patterns
 4. This enables **fan-out** — a single event can be consumed by multiple independent subscribers
 
-For example, when `assessment-roll.created` is published:
+For example, when `order-management.created` is published:
 
-- The `tax-billing-instalment` queue might bind to `assessment-roll.*` to receive all assessment events
+- The `billing` queue might bind to `order-management.*` to receive all assessment events
 - The `analytics` queue might bind to `*.created` to receive all creation events across modules
 - The `audit-log` queue might bind to `#` to receive all events
 
 ### How It Works
 
-The `CivicRmqClient` overrides `dispatchEvent()` to call `channel.publish(exchange, routingKey, content, options)` instead of `channel.sendToQueue(queue, content)`. The routing key comes from the `pattern` field of the NestJS packet (which is the first argument to `client.emit(routingKey, data)`).
+The `CustomRmqClient` overrides `dispatchEvent()` to call `channel.publish(exchange, routingKey, content, options)` instead of `channel.sendToQueue(queue, content)`. The routing key comes from the `pattern` field of the NestJS packet (which is the first argument to `client.emit(routingKey, data)`).
 
 Messages are published with:
 
@@ -59,8 +59,8 @@ Messages are published with:
 packages/common/
 └── src/
     └── events/
-        ├── civic-rmq-client.ts    # This file — custom ClientRMQ
-        ├── rmq.module.ts          # DynamicModule factory (uses CivicRmqClient)
+        ├── custom-rmq-client.ts    # This file — custom ClientRMQ
+        ├── rmq.module.ts          # DynamicModule factory (uses CustomRmqClient)
         └── index.ts               # Barrel export
 ```
 
@@ -77,7 +77,7 @@ ClientRMQ (NestJS)
     │  ├── setupChannel()      — Asserts queue, binds exchange
     │  └── emit()              — Public API (calls dispatchEvent)
     │
-    └── CivicRmqClient
+    └── CustomRmqClient
          │
          └── dispatchEvent()   — OVERRIDDEN: publish to exchange
                                   instead of sendToQueue
@@ -87,7 +87,7 @@ ClientRMQ (NestJS)
 
 ```
 Publisher code:
-  this.client.emit("assessment-roll.created", payload)
+  this.client.emit("order-management.created", payload)
        │
        ▼
 ClientProxy.emit(pattern, data)
@@ -95,17 +95,17 @@ ClientProxy.emit(pattern, data)
   → Calls this.dispatchEvent(packet)
        │
        ▼
-CivicRmqClient.dispatchEvent(packet)
-  → channel.publish("civic.revenue", "assessment-roll.created", Buffer, options)
+CustomRmqClient.dispatchEvent(packet)
+  → channel.publish("myorg.domain", "order-management.created", Buffer, options)
        │
        ▼
-RabbitMQ Exchange (civic.revenue)
+RabbitMQ Exchange (myorg.domain)
   → Routes by topic matching to bound queues
 ```
 
 ## 5. Example Implementation
 
-### Full CivicRmqClient Implementation
+### Full CustomRmqClient Implementation
 
 ```typescript
 import { ClientRMQ, RmqOptions } from "@nestjs/microservices";
@@ -120,7 +120,7 @@ import { ClientRMQ, RmqOptions } from "@nestjs/microservices";
  *
  * Usage: Created via RmqModule.register() — never instantiated directly.
  */
-export class CivicRmqClient extends ClientRMQ {
+export class CustomRmqClient extends ClientRMQ {
     /**
      * Override dispatchEvent to publish to the configured exchange
      * using the packet's pattern as the routing key.
@@ -139,11 +139,11 @@ export class CivicRmqClient extends ClientRMQ {
         }
 
         // Read exchange from the options passed during construction
-        // Options are set by RmqModule.register() → new CivicRmqClient({ exchange: "civic.revenue", ... })
+        // Options are set by RmqModule.register() → new CustomRmqClient({ exchange: "myorg.domain", ... })
         const exchange = (this as any).options?.exchange ?? "";
 
-        // The routing key is the event name (e.g., "assessment-roll.created")
-        // This comes from: this.client.emit("assessment-roll.created", payload)
+        // The routing key is the event name (e.g., "order-management.created")
+        // This comes from: this.client.emit("order-management.created", payload)
         const routingKey = packet.pattern;
 
         // Serialize the payload to a JSON buffer
@@ -152,8 +152,8 @@ export class CivicRmqClient extends ClientRMQ {
         return new Promise<void>((resolve, reject) => {
             try {
                 const published = channel.publish(
-                    exchange, // Target exchange (e.g., "civic.revenue")
-                    routingKey, // Topic routing key (e.g., "assessment-roll.created")
+                    exchange, // Target exchange (e.g., "myorg.domain")
+                    routingKey, // Topic routing key (e.g., "order-management.created")
                     content, // Message body as Buffer
                     {
                         persistent: true, // deliveryMode: 2 — survives broker restart
@@ -179,26 +179,26 @@ export class CivicRmqClient extends ClientRMQ {
 ### Detailed Walkthrough: Message Flow
 
 ```typescript
-// 1. Publisher calls emit (in assessment-roll.publisher.ts)
-this.client.emit(AssessmentRollEvents.CREATED, validatedPayload);
-// Internally: emit("assessment-roll.created", { assessmentRollId: "...", ... })
+// 1. Publisher calls emit (in order-management.publisher.ts)
+this.client.emit(OrderManagementEvents.CREATED, validatedPayload);
+// Internally: emit("order-management.created", { assessmentRollId: "...", ... })
 
 // 2. ClientProxy.emit() creates a packet and calls dispatchEvent()
 //    packet = {
-//        pattern: "assessment-roll.created",
+//        pattern: "order-management.created",
 //        data: { assessmentRollId: "roll-123", propertyId: "prop-456", ... }
 //    }
 
-// 3. CivicRmqClient.dispatchEvent() publishes to exchange
+// 3. CustomRmqClient.dispatchEvent() publishes to exchange
 //    channel.publish(
-//        "civic.revenue",                          // exchange
-//        "assessment-roll.created",                // routing key
+//        "myorg.domain",                          // exchange
+//        "order-management.created",                // routing key
 //        Buffer.from('{"assessmentRollId":"roll-123",...}'),  // content
 //        { persistent: true, contentType: "application/json" }
 //    )
 
 // 4. RabbitMQ routes the message based on topic bindings:
-//    - Queue "tax-billing-events" bound with "assessment-roll.*"    → MATCH ✓
+//    - Queue "billing-events" bound with "order-management.*"    → MATCH ✓
 //    - Queue "analytics-events" bound with "*.created"              → MATCH ✓
 //    - Queue "payment-events" bound with "payment.*"                → NO MATCH ✗
 ```
@@ -209,11 +209,11 @@ For production environments, you may extend with observability:
 
 ```typescript
 import { ClientRMQ } from "@nestjs/microservices";
-import { createLogger } from "@civic/common";
+import { createLogger } from "@myorg/common";
 
-const logger = createLogger({ module: "civic-rmq-client" });
+const logger = createLogger({ module: "custom-rmq-client" });
 
-export class CivicRmqClient extends ClientRMQ {
+export class CustomRmqClient extends ClientRMQ {
     protected dispatchEvent(packet: { pattern: string; data: unknown }): Promise<any> {
         const channel = this.channel;
 
@@ -273,22 +273,22 @@ export class CivicRmqClient extends ClientRMQ {
 }
 ```
 
-### How CivicRmqClient Options Are Passed
+### How CustomRmqClient Options Are Passed
 
-The `CivicRmqClient` receives its configuration when instantiated in `RmqModule`:
+The `CustomRmqClient` receives its configuration when instantiated in `RmqModule`:
 
 ```typescript
 // In RmqModule.register()
-new CivicRmqClient({
+new CustomRmqClient({
     urls: [process.env.RABBITMQ_URL!], // AMQP connection URL
-    queue: "assessment-roll-events", // Queue name (used by parent for assertion)
+    queue: "order-management-events", // Queue name (used by parent for assertion)
     queueOptions: {
         durable: true, // Queue survives broker restart
         arguments: {
-            "x-dead-letter-exchange": "civic.dlx", // Failed messages go here
+            "x-dead-letter-exchange": "myorg.dlx", // Failed messages go here
         },
     },
-    exchange: "civic.revenue", // ← Used by CivicRmqClient.dispatchEvent()
+    exchange: "myorg.domain", // ← Used by CustomRmqClient.dispatchEvent()
     exchangeType: "topic", // Topic-based routing
     noAck: false, // Manual ack (consumer confirms processing)
     prefetchCount: 10, // Max unacked messages per consumer
@@ -298,10 +298,10 @@ new CivicRmqClient({
 ### Unit Test Pattern
 
 ```typescript
-import { CivicRmqClient } from "./civic-rmq-client";
+import { CustomRmqClient } from "./custom-rmq-client";
 
-describe("CivicRmqClient", () => {
-    let client: CivicRmqClient;
+describe("CustomRmqClient", () => {
+    let client: CustomRmqClient;
     let mockChannel: {
         publish: jest.Mock;
         once: jest.Mock;
@@ -309,7 +309,7 @@ describe("CivicRmqClient", () => {
 
     beforeEach(() => {
         // Create client with test options
-        client = new CivicRmqClient({
+        client = new CustomRmqClient({
             urls: ["amqp://localhost:5672"],
             queue: "test-queue",
             exchange: "test-exchange",

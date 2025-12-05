@@ -4,7 +4,7 @@
 
 **Type:** Docker Compose Development Environment  
 **Layer:** Infrastructure / Orchestration  
-**Reference Implementation:** `products/property-tax/docker-compose.yml`
+**Reference Implementation:** `products/my-product/docker-compose.yml`
 
 ## 2. Overview
 
@@ -125,9 +125,9 @@ services:
         image: postgres:16-alpine
         restart: unless-stopped
         environment:
-            POSTGRES_USER: ${POSTGRES_USER:-civic}
+            POSTGRES_USER: ${POSTGRES_USER:-myorg}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB:-civic_platform}
+            POSTGRES_DB: ${POSTGRES_DB:-myorg_platform}
         ports:
             - "5433:5432"
         volumes:
@@ -139,7 +139,7 @@ services:
                     memory: 512M
                     cpus: "1.0"
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U civic"]
+            test: ["CMD-SHELL", "pg_isready -U myorg"]
             interval: 5s
             timeout: 3s
             retries: 5
@@ -153,9 +153,9 @@ services:
             - "5673:5672" # AMQP protocol
             - "15673:15672" # Management UI
         environment:
-            RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-civic}
+            RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-myorg}
             RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-            RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-property-tax}
+            RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST:-my-product}
         volumes:
             - rabbitmq_data:/var/lib/rabbitmq
         deploy:
@@ -208,7 +208,7 @@ services:
         ports:
             - "5555:5555"
         environment:
-            DATABASE_URL: postgresql://${POSTGRES_USER:-civic}:${POSTGRES_PASSWORD}@postgres:5432/resource_db
+            DATABASE_URL: postgresql://${POSTGRES_USER:-myorg}:${POSTGRES_PASSWORD}@postgres:5432/resource_db
         volumes:
             - ../../:/app
         depends_on:
@@ -219,18 +219,18 @@ services:
 
     # ─── Platform Modules (L1) ─────────────────────────
 
-    auth-gateway:
+    auth-service:
         build:
             context: ../../
-            dockerfile: modules/platform/auth-gateway/Dockerfile
+            dockerfile: modules/platform/auth-service/Dockerfile
         restart: unless-stopped
         ports:
             - "4100:4100"
         environment:
             PORT: 4100
             NODE_ENV: development
-            DATABASE_URL: postgresql://${POSTGRES_USER:-civic}:${POSTGRES_PASSWORD}@postgres:5432/auth_gateway
-            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-civic}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-property-tax}
+            DATABASE_URL: postgresql://${POSTGRES_USER:-myorg}:${POSTGRES_PASSWORD}@postgres:5432/auth_service
+            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-myorg}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-my-product}
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRES_IN: 15m
             REFRESH_TOKEN_EXPIRES_IN: 7d
@@ -264,18 +264,18 @@ services:
             retries: 3
             start_period: 30s
 
-    notification-engine:
+    notification-service:
         build:
             context: ../../
-            dockerfile: modules/platform/notification-engine/Dockerfile
+            dockerfile: modules/platform/notification-service/Dockerfile
         restart: unless-stopped
         ports:
             - "4101:4101"
         environment:
             PORT: 4101
             NODE_ENV: development
-            DATABASE_URL: postgresql://${POSTGRES_USER:-civic}:${POSTGRES_PASSWORD}@postgres:5432/notification_engine
-            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-civic}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-property-tax}
+            DATABASE_URL: postgresql://${POSTGRES_USER:-myorg}:${POSTGRES_PASSWORD}@postgres:5432/notification_service
+            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-myorg}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-my-product}
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRES_IN: 15m
             LOG_LEVEL: debug
@@ -305,19 +305,19 @@ services:
 
     # ─── Shared Modules (L2) ───────────────────────────
 
-    billing-invoicing:
+    invoice-service:
         build:
             context: ../../
-            dockerfile: modules/shared/billing-invoicing/Dockerfile
+            dockerfile: modules/shared/invoice-service/Dockerfile
         restart: unless-stopped
         ports:
             - "4102:4102"
         environment:
             PORT: 4102
             NODE_ENV: development
-            DATABASE_URL: postgresql://${POSTGRES_USER:-civic}:${POSTGRES_PASSWORD}@postgres:5432/billing_invoicing
-            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-civic}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-property-tax}
-            NOTIFICATION_ENGINE_URL: http://notification-engine:4101
+            DATABASE_URL: postgresql://${POSTGRES_USER:-myorg}:${POSTGRES_PASSWORD}@postgres:5432/invoice_service
+            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-myorg}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-my-product}
+            NOTIFICATION_ENGINE_URL: http://notification-service:4101
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRES_IN: 15m
             LOG_LEVEL: debug
@@ -326,7 +326,7 @@ services:
                 condition: service_healthy
             rabbitmq:
                 condition: service_healthy
-            notification-engine:
+            notification-service:
                 condition: service_healthy
         networks:
             - backend
@@ -359,8 +359,8 @@ services:
         environment:
             PORT: 4104
             NODE_ENV: development
-            DATABASE_URL: postgresql://${POSTGRES_USER:-civic}:${POSTGRES_PASSWORD}@postgres:5432/resource_db
-            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-civic}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-property-tax}
+            DATABASE_URL: postgresql://${POSTGRES_USER:-myorg}:${POSTGRES_PASSWORD}@postgres:5432/resource_db
+            RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-myorg}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-my-product}
             JWT_SECRET: ${JWT_SECRET}
             JWT_EXPIRES_IN: 15m
             LOG_LEVEL: debug
@@ -439,20 +439,20 @@ networks:
 
 **Adding a new service with `extraEnv` URLs:**
 
-When a service references another service via URL (e.g., `NOTIFICATION_ENGINE_URL: http://notification-engine:4101`), that service must also appear in `depends_on` with `condition: service_healthy`:
+When a service references another service via URL (e.g., `NOTIFICATION_ENGINE_URL: http://notification-service:4101`), that service must also appear in `depends_on` with `condition: service_healthy`:
 
 ```yaml
 new-module:
     # ... standard fields ...
     environment:
         # ... standard env vars ...
-        NOTIFICATION_ENGINE_URL: http://notification-engine:4101 # extraEnv from registry
+        NOTIFICATION_ENGINE_URL: http://notification-service:4101 # extraEnv from registry
     depends_on:
         postgres:
             condition: service_healthy
         rabbitmq:
             condition: service_healthy
-        notification-engine: # must also be in depends_on
+        notification-service: # must also be in depends_on
             condition: service_healthy
 ```
 
@@ -479,13 +479,13 @@ redis-dependent-module:
 
 ```env
 # ─── Infrastructure ──────────────────────────
-POSTGRES_USER=civic
-POSTGRES_PASSWORD=civic_dev_password
-POSTGRES_DB=civic_platform
-RABBITMQ_DEFAULT_USER=civic
-RABBITMQ_DEFAULT_PASS=civic_dev_password
+POSTGRES_USER=myorg
+POSTGRES_PASSWORD=dev_password
+POSTGRES_DB=myorg_platform
+RABBITMQ_DEFAULT_USER=myorg
+RABBITMQ_DEFAULT_PASS=dev_password
 RABBITMQ_DEFAULT_VHOST=product-name
-REDIS_PASSWORD=civic_dev_password
+REDIS_PASSWORD=dev_password
 
 # ─── Application ─────────────────────────────
 JWT_SECRET=dev-jwt-secret-change-in-production

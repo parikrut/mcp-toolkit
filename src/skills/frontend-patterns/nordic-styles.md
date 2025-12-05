@@ -7,7 +7,7 @@
 The **Nordic Styles** system is a CSS-first design token layer built on
 Tailwind CSS v4's `@theme` directive. It defines colour palettes, semantic
 tokens, keyframe animations, and scroll-reveal utility classes in a single
-shared CSS file consumed by all applications and the `@civic/ui` component
+shared CSS file consumed by all applications and the `@myorg/ui` component
 library.
 
 ## 2. Overview
@@ -28,7 +28,7 @@ generous whitespace, subtle animations, and a restrained palette. It provides:
 Applications consume the theme via a single CSS import:
 
 ```css
-@import "@civic/ui/theme.css";
+@import "@myorg/ui/theme.css";
 ```
 
 ## 3. Rules
@@ -37,7 +37,7 @@ Applications consume the theme via a single CSS import:
    tokens: `text-(--color-text-primary)`, `bg-(--color-surface)`, etc.
 2. **Dark mode is automatic.** Add the `.dark` class to the `<html>` element;
    all tokens swap. Components must not set their own dark overrides.
-3. **Use `ScrollReveal` from `@civic/ui` for entrance animations** — not raw
+3. **Use `ScrollReveal` from `@myorg/ui` for entrance animations** — not raw
    CSS classes. The component wires up `IntersectionObserver` and adds the
    `.is-visible` class automatically.
 4. **Respect reduced motion.** The theme's `@media (prefers-reduced-motion)`
@@ -180,7 +180,7 @@ packages/ui/src/styles/theme.css
 
 ```css
 /* apps/<app>/src/index.css */
-@import "@civic/ui/theme.css";
+@import "@myorg/ui/theme.css";
 @source "../../packages/ui/src";
 
 @layer base {

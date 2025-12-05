@@ -4,15 +4,15 @@
 
 **Type:** Injectable Service  
 **Layer:** Business Logic / Application  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/src/services/property.service.ts`
+**Reference Implementation:** `modules/domain/revenue/order-management/src/services/property.service.ts`
 
 ## 2. Overview
 
 Services are the heart of every module — they contain all business logic, orchestration, data mapping, and validation beyond what Zod handles at the boundary. A service is injected into one or more controllers and acts as the single coordination point between the repository (data access), the event publisher (async messaging), and any external service clients.
 
-Services **never** return raw Prisma entities. Every entity retrieved from the repository is mapped through a private `toResponse()` method that converts the Prisma model into the shape defined by the `@civic/contracts` response schema. This mapping handles type coercions (e.g., `BigInt` → `Number`, `Decimal` → `string`), nested relation flattening, and field renaming.
+Services **never** return raw Prisma entities. Every entity retrieved from the repository is mapped through a private `toResponse()` method that converts the Prisma model into the shape defined by the `@myorg/contracts` response schema. This mapping handles type coercions (e.g., `BigInt` → `Number`, `Decimal` → `string`), nested relation flattening, and field renaming.
 
-Pagination is standardised: `list()` calls the repository's `findMany()` (which returns a `[items[], count]` tuple), then uses `calculateOffset()` and `buildPaginationMeta()` from `@civic/common` to construct the pagination envelope.
+Pagination is standardised: `list()` calls the repository's `findMany()` (which returns a `[items[], count]` tuple), then uses `calculateOffset()` and `buildPaginationMeta()` from `@myorg/common` to construct the pagination envelope.
 
 All mutations publish domain events via the `Publisher` so downstream services (notifications, audit log, analytics) react asynchronously.
 
@@ -21,10 +21,10 @@ All mutations publish domain events via the `Publisher` so downstream services (
 1. **`@Injectable()` decorator.** Every service class must be decorated with `@Injectable()`.
 2. **Constructor injection only.** Inject dependencies via the constructor: repository, publisher, config client, etc.
 3. **Never return Prisma entities.** Every public method must map results through `toResponse()` before returning.
-4. **Use domain error classes.** Throw `NotFoundError`, `ConflictError`, or `ValidationError` from `@civic/common` — never raw `HttpException`.
+4. **Use domain error classes.** Throw `NotFoundError`, `ConflictError`, or `ValidationError` from `@myorg/common` — never raw `HttpException`.
 5. **Soft deletes only.** `delete()` sets `status: "DELETED"`, `deletedAt: new Date()`, `updatedBy: userId` — never calls Prisma `delete()`.
 6. **Publish events after successful mutations.** Call `publisher.publishResourceCreated()`, `publishResourceUpdated()`, or `publishResourceDeleted()` after the repository operation succeeds.
-7. **Pagination via helpers.** Use `calculateOffset(page, limit)` and `buildPaginationMeta(total, page, limit)` from `@civic/common` — never compute pagination manually.
+7. **Pagination via helpers.** Use `calculateOffset(page, limit)` and `buildPaginationMeta(total, page, limit)` from `@myorg/common` — never compute pagination manually.
 8. **Partial updates.** `update()` must only forward fields that are actually present in the parsed body — never overwrite with `undefined`.
 9. **`toResponse()` is private.** It is an internal mapping concern and must not be exposed or reused outside the service.
 10. **No HTTP concepts.** Services must not reference status codes, request/response objects, or decorators. They operate in a transport-agnostic domain layer.
@@ -45,21 +45,21 @@ modules/domain/<domain>/<module>/src/services/
 | `ResourceRepository`                                | `../repositories/resource.repository` | Data access             |
 | `ResourcePublisher`                                 | `../publishers/resource.publisher`    | Domain event publishing |
 | `ConfigClient`                                      | `../clients/config.client` (optional) | External service config |
-| `calculateOffset`, `buildPaginationMeta`            | `@civic/common`                       | Pagination helpers      |
-| `NotFoundError`, `ConflictError`, `ValidationError` | `@civic/common`                       | Domain error classes    |
+| `calculateOffset`, `buildPaginationMeta`            | `@myorg/common`                       | Pagination helpers      |
+| `NotFoundError`, `ConflictError`, `ValidationError` | `@myorg/common`                       | Domain error classes    |
 
 ## 5. Example Implementation
 
 ```typescript
 import { Injectable } from "@nestjs/common";
-import { calculateOffset, buildPaginationMeta, NotFoundError, ConflictError } from "@civic/common";
+import { calculateOffset, buildPaginationMeta, NotFoundError, ConflictError } from "@myorg/common";
 import type {
     ResourceQuery,
     CreateResourceBody,
     UpdateResourceBody,
     ResourceResponse,
     PaginatedResourceResponse,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 import { ResourceRepository } from "../repositories/resource.repository";
 import { ResourcePublisher } from "../publishers/resource.publisher";
 

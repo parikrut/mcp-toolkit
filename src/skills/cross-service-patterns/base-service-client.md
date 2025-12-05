@@ -4,7 +4,7 @@
 
 **Type:** Abstract Class  
 **Location:** `packages/common/src/base-service-client.ts`  
-**Consumers:** Every module that calls another service over HTTP (e.g., `AssessmentRollClient`, `BillingClient`, `PaymentClient`, `NotificationClient`)
+**Consumers:** Every module that calls another service over HTTP (e.g., `OrderManagementClient`, `BillingClient`, `PaymentClient`, `NotificationClient`)
 
 This pattern defines the `BaseServiceClient` abstract class — the single HTTP transport layer for all internal service-to-service communication. Concrete clients extend it and expose domain-specific methods while inheriting retry logic, timeouts, response unwrapping, and optional Zod validation.
 
@@ -12,7 +12,7 @@ This pattern defines the `BaseServiceClient` abstract class — the single HTTP 
 
 ## 2. Overview
 
-In a composable microservice architecture, services frequently call each other (e.g., Billing → Assessment Roll, Payment → Billing, Notification → CRM). Rather than repeating HTTP plumbing in each client, the platform centralises it in `BaseServiceClient`.
+In a composable microservice architecture, services frequently call each other (e.g., Billing → Order Record, Payment → Billing, Notification → CRM). Rather than repeating HTTP plumbing in each client, the platform centralises it in `BaseServiceClient`.
 
 ### What It Does
 
@@ -45,7 +45,7 @@ In a composable microservice architecture, services frequently call each other (
 ## 3. Rules
 
 1. **Every service client MUST extend `BaseServiceClient`.** Do not use raw `fetch()` for inter-service calls.
-2. **Constructor MUST receive a base URL from an environment variable.** Example: `super(process.env.ASSESSMENT_ROLL_URL ?? "http://localhost:3020")`. Never hard-code production URLs.
+2. **Constructor MUST receive a base URL from an environment variable.** Example: `super(process.env.ORDER_MANAGEMENT_URL ?? "http://localhost:3020")`. Never hard-code production URLs.
 3. **Always provide a fallback localhost URL** in the constructor for local development without service discovery.
 4. **Use the convenience methods** (`get`, `post`, `patch`, `del`) in concrete clients. Only call `request()` directly when you need a non-standard HTTP method (e.g., `PUT`).
 5. **Forward `correlationId`** from the incoming request context through the concrete client method → `request()` → `createInternalHeaders()`.
@@ -82,7 +82,7 @@ modules/domain/<module>/src/
 
 ```
 BaseServiceClient (abstract)
-├── AssessmentRollClient      → talks to Assessment Roll service
+├── OrderManagementClient      → talks to Order Record service
 ├── BillingClient             → talks to Billing service
 ├── PaymentClient             → talks to Payment service
 ├── NotificationClient        → talks to Notification service
@@ -288,18 +288,18 @@ export abstract class BaseServiceClient {
 }
 ```
 
-### Concrete Client Example: `AssessmentRollClient`
+### Concrete Client Example: `OrderManagementClient`
 
 ```typescript
-// modules/domain/billing/src/clients/assessment-roll-client.ts
+// modules/domain/billing/src/clients/order-management-client.ts
 
-import { BaseServiceClient } from "@civic/common";
-import type { PropertyAssessmentDto, AssessmentHistoryDto } from "@civic/contracts/assessment-roll";
-import { PropertyAssessmentSchema } from "@civic/contracts/assessment-roll";
+import { BaseServiceClient } from "@myorg/common";
+import type { PropertyAssessmentDto, AssessmentHistoryDto } from "@myorg/contracts/order-management";
+import { PropertyAssessmentSchema } from "@myorg/contracts/order-management";
 
-export class AssessmentRollClient extends BaseServiceClient {
+export class OrderManagementClient extends BaseServiceClient {
     constructor() {
-        super(process.env.ASSESSMENT_ROLL_URL ?? "http://localhost:3020");
+        super(process.env.ORDER_MANAGEMENT_URL ?? "http://localhost:3020");
     }
 
     /**
@@ -311,7 +311,7 @@ export class AssessmentRollClient extends BaseServiceClient {
         correlationId?: string,
     ): Promise<PropertyAssessmentDto> {
         return this.get<PropertyAssessmentDto>(
-            `/api/assessment-roll/properties/${propertyId}/assessment`,
+            `/api/order-management/properties/${propertyId}/assessment`,
             {
                 correlationId,
                 responseSchema: PropertyAssessmentSchema,
@@ -327,7 +327,7 @@ export class AssessmentRollClient extends BaseServiceClient {
         correlationId?: string,
     ): Promise<AssessmentHistoryDto[]> {
         return this.get<AssessmentHistoryDto[]>(
-            `/api/assessment-roll/properties/${propertyId}/history`,
+            `/api/order-management/properties/${propertyId}/history`,
             correlationId, // String shorthand — just forwards the correlation ID
         );
     }
@@ -341,7 +341,7 @@ export class AssessmentRollClient extends BaseServiceClient {
         correlationId?: string,
     ): Promise<{ id: string }> {
         return this.post<{ id: string }>(
-            `/api/assessment-roll/properties/${propertyId}/supplementary`,
+            `/api/order-management/properties/${propertyId}/supplementary`,
             payload,
             {
                 correlationId,
@@ -357,7 +357,7 @@ export class AssessmentRollClient extends BaseServiceClient {
 ```typescript
 // modules/domain/billing/src/clients/notification-client.ts
 
-import { BaseServiceClient } from "@civic/common";
+import { BaseServiceClient } from "@myorg/common";
 
 interface SendNotificationPayload {
     templateId: string;
@@ -390,17 +390,17 @@ export class NotificationClient extends BaseServiceClient {
 // modules/domain/billing/src/services/billing.service.ts
 
 import { Injectable, Logger } from "@nestjs/common";
-import { AssessmentRollClient } from "../clients/assessment-roll-client";
+import { OrderManagementClient } from "../clients/order-management-client";
 import { NotificationClient } from "../clients/notification-client";
 
 @Injectable()
 export class BillingService {
     private readonly logger = new Logger(BillingService.name);
-    private readonly assessmentClient = new AssessmentRollClient();
+    private readonly assessmentClient = new OrderManagementClient();
     private readonly notificationClient = new NotificationClient();
 
     async generateAndNotify(propertyId: string, ownerId: string, correlationId: string) {
-        // 1. Fetch assessment data from Assessment Roll service
+        // 1. Fetch assessment data from Order Record service
         const assessment = await this.assessmentClient.getPropertyAssessment(
             propertyId,
             correlationId,

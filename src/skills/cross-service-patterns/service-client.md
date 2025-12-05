@@ -4,7 +4,7 @@
 
 **Type:** Utility Function  
 **Location:** `packages/common/src/service-client.ts`  
-**Consumers:** All concrete service clients (e.g., `AssessmentRollClient`, `BillingClient`, `PaymentClient`)
+**Consumers:** All concrete service clients (e.g., `OrderManagementClient`, `BillingClient`, `PaymentClient`)
 
 This pattern defines the `createInternalHeaders()` function used by every cross-service HTTP call in the platform. It generates short-lived JWT credentials and correlation headers so that downstream services can authenticate and trace requests originating from other internal services.
 
@@ -12,7 +12,7 @@ This pattern defines the `createInternalHeaders()` function used by every cross-
 
 ## 2. Overview
 
-When one microservice calls another (e.g., the Billing service calling Assessment Roll to fetch property data), the caller must prove it is a trusted internal service — not an external user or rogue actor. The platform solves this with **short-lived service account JWTs**.
+When one microservice calls another (e.g., the Billing service calling Order Record to fetch property data), the caller must prove it is a trusted internal service — not an external user or rogue actor. The platform solves this with **short-lived service account JWTs**.
 
 `createInternalHeaders(correlationId?)` is a pure function that:
 
@@ -59,7 +59,7 @@ If `createInternalHeaders()` is called without a `correlationId` argument (e.g.,
 5. **Do not modify the service account payload.** The `userId`, `email`, `role`, `municipalityId`, and `name` fields are hard-coded and must remain consistent across all services so that downstream authorization guards recognize the `SERVICE_ACCOUNT` role.
 6. **Do not extend the JWT TTL** beyond 30 seconds. Short-lived tokens are a deliberate security boundary.
 7. **This function is synchronous** — `jwt.sign()` with HMAC (HS256 default) is CPU-bound but fast. Do not wrap it in a Promise unnecessarily.
-8. **Import from `@civic/common`** — the function is re-exported from the common package barrel. Never duplicate it into individual modules.
+8. **Import from `@myorg/common`** — the function is re-exported from the common package barrel. Never duplicate it into individual modules.
 9. **Guard clauses in downstream services** should check for `role === "SERVICE_ACCOUNT"` to distinguish internal calls from user-initiated requests when applying authorization policies.
 10. **Logging:** Do not log the full token value. Log the correlation ID for traceability.
 
@@ -169,20 +169,20 @@ export function createInternalHeaders(correlationId?: string): Record<string, st
 ### Usage in a Concrete Service Client
 
 ```typescript
-// modules/domain/billing/src/clients/assessment-roll-client.ts
+// modules/domain/billing/src/clients/order-management-client.ts
 
-import { BaseServiceClient } from "@civic/common";
-import type { PropertyAssessment } from "@civic/contracts/assessment-roll";
+import { BaseServiceClient } from "@myorg/common";
+import type { PropertyAssessment } from "@myorg/contracts/order-management";
 
-export class AssessmentRollClient extends BaseServiceClient {
+export class OrderManagementClient extends BaseServiceClient {
     constructor() {
         // Base URL from environment — each downstream service has its own env var
-        super(process.env.ASSESSMENT_ROLL_URL ?? "http://localhost:3020");
+        super(process.env.ORDER_MANAGEMENT_URL ?? "http://localhost:3020");
     }
 
     /**
      * Fetches the current assessment for a property.
-     * The correlationId is forwarded so the Assessment Roll service
+     * The correlationId is forwarded so the Order Record service
      * can trace this call back to the original user request.
      */
     async getPropertyAssessment(
@@ -190,7 +190,7 @@ export class AssessmentRollClient extends BaseServiceClient {
         correlationId?: string,
     ): Promise<PropertyAssessment> {
         return this.get<PropertyAssessment>(
-            `/api/assessment-roll/properties/${propertyId}/assessment`,
+            `/api/order-management/properties/${propertyId}/assessment`,
             correlationId,
         );
     }
@@ -203,11 +203,11 @@ export class AssessmentRollClient extends BaseServiceClient {
 // modules/domain/billing/src/services/billing.service.ts
 
 import { Injectable } from "@nestjs/common";
-import { AssessmentRollClient } from "../clients/assessment-roll-client";
+import { OrderManagementClient } from "../clients/order-management-client";
 
 @Injectable()
 export class BillingService {
-    private readonly assessmentClient = new AssessmentRollClient();
+    private readonly assessmentClient = new OrderManagementClient();
 
     async generateBill(propertyId: string, correlationId: string) {
         // The correlation ID from the incoming HTTP request is forwarded

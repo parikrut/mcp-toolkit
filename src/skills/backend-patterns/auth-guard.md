@@ -8,7 +8,7 @@ The **AuthGuard** is a global NestJS guard (`@Injectable()` implementing
 `CanActivate`) that intercepts every incoming HTTP request and validates a JWT
 token before the request reaches a controller. Routes decorated with
 `@Public()` bypass authentication entirely. The guard extracts the JWT from
-either the `Authorization: Bearer <token>` header or the `civic_access_token`
+either the `Authorization: Bearer <token>` header or the `app_access_token`
 httpOnly cookie, verifies it against the `JWT_SECRET` environment variable, and
 attaches the decoded payload to `request.user` as a `RequestUser` object.
 
@@ -20,7 +20,7 @@ attaches the decoded payload to `request.user` as a `RequestUser` object.
 | **Class**            | `AuthGuard` — `@Injectable()` implementing `CanActivate`                              |
 | **Global binding**   | Applied globally in `bootstrapModule()` via `APP_GUARD` provider                      |
 | **Public bypass**    | Checks `@Public()` metadata (`IS_PUBLIC_KEY`) via `Reflector` — returns `true` if set |
-| **Token extraction** | 1) `Authorization: Bearer <token>` header, 2) `civic_access_token` httpOnly cookie    |
+| **Token extraction** | 1) `Authorization: Bearer <token>` header, 2) `app_access_token` httpOnly cookie    |
 | **Verification**     | `jwt.verify(token, process.env.JWT_SECRET!)` — decodes to `RequestUser`               |
 | **Request mutation** | Sets `request.user` to the decoded `RequestUser` payload                              |
 | **Error handling**   | Throws `UnauthorizedException` on missing token or invalid/expired token              |
@@ -38,7 +38,7 @@ The `RequestUser` interface is the canonical user shape used by controllers
    class decorated with `@Public()` bypasses authentication. There is no
    allowlist or URL-pattern-based bypass.
 3. **Token extraction priority:** Header (`Authorization: Bearer`) is checked
-   first. If absent, the `civic_access_token` cookie is checked. If neither
+   first. If absent, the `app_access_token` cookie is checked. If neither
    exists, `UnauthorizedException` is thrown.
 4. **JWT_SECRET must be set in the environment.** The guard reads
    `process.env.JWT_SECRET` directly. Missing secret will cause verification
@@ -75,7 +75,7 @@ Request arrives
   │
   ├── Extract token
   │     ├── 1. Authorization header → "Bearer <token>" → slice(7)
-  │     └── 2. Cookie → request.cookies.civic_access_token
+  │     └── 2. Cookie → request.cookies.app_access_token
   │
   ├── No token found → throw UnauthorizedException("Missing authentication token")
   │
@@ -140,7 +140,7 @@ export class AuthGuard implements CanActivate {
 
     /**
      * Extracts the JWT from the Authorization header (Bearer scheme)
-     * or the civic_access_token httpOnly cookie.
+     * or the app_access_token httpOnly cookie.
      */
     private extractToken(request: any): string | null {
         // Priority 1: Authorization header
@@ -150,7 +150,7 @@ export class AuthGuard implements CanActivate {
         }
 
         // Priority 2: httpOnly cookie
-        return request.cookies?.civic_access_token ?? null;
+        return request.cookies?.app_access_token ?? null;
     }
 }
 ```
@@ -159,7 +159,7 @@ export class AuthGuard implements CanActivate {
 
 ```typescript
 import { APP_GUARD } from "@nestjs/core";
-import { AuthGuard } from "@civic/common";
+import { AuthGuard } from "@myorg/common";
 
 @Module({
     providers: [
@@ -180,7 +180,7 @@ export class AppModule {}
 ### Using `RequestUser` in a Service
 
 ```typescript
-import { RequestUser } from "@civic/common";
+import { RequestUser } from "@myorg/common";
 
 @Injectable()
 export class PropertyService {

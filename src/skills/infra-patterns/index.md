@@ -1,7 +1,7 @@
 # Infrastructure Patterns
 
 > Canonical reference for Docker, deployment, and infrastructure-as-code
-> patterns in the Civic Modules platform.
+> patterns in your microservices platform.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
 
@@ -16,7 +16,7 @@ manifest that drives the deployment pipeline.
 
 ```
 ┌───────────────────────────────────────────────────────┐
-│  products/property-tax/infra/                         │
+│  products/my-product/infra/                         │
 │                                                       │
 │  service-registry.ts  ◀── Single source of truth      │
 │       │                                               │
@@ -30,11 +30,11 @@ manifest that drives the deployment pipeline.
 │                                                       │
 │  docker-compose.yml                                   │
 │   ├── postgres:16  ├── rabbitmq:3.13  ├── redis:7     │
-│   ├── auth-gateway  ├── notification-engine           │
-│   ├── billing-invoicing  ├── assessment-roll          │
-│   ├── tax-billing  ├── tax-levy-rate                  │
-│   ├── payment-processing  ├── tax-certificates        │
-│   ├── tax-sale-proceedings  ├── property-tax-web      │
+│   ├── auth-service  ├── notification-service           │
+│   ├── invoice-service  ├── order-management          │
+│   ├── billing  ├── rate-service                  │
+│   ├── payment-service  ├── certificate-service        │
+│   ├── auction-service  ├── my-app-web      │
 │   └── prisma-studio                                   │
 └───────────────────────────────────────────────────────┘
 

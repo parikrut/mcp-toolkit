@@ -38,7 +38,7 @@ and invalidate the relevant query keys on success.
    the hierarchical array pattern.
 3. **All response data is Zod-validated** via `parseResponse()` or
    `useTypedListQuery({ itemSchema })`. Never trust raw API responses.
-4. **Schemas and types come from `@civic/contracts`.** Never define response
+4. **Schemas and types come from `@myorg/contracts`.** Never define response
    shapes locally.
 5. **`staleTime` should be set** (typically `30_000` ms) to prevent cascading
    refetches when multiple components share the same query key.
@@ -56,8 +56,8 @@ src/hooks/use-<domain>.ts
 ├── import { api } from "../services/api"
 ├── import { parseResponse } from "../lib/parse-response"
 ├── import { useTypedListQuery } from "../lib/use-typed-query"
-├── import { <ResponseSchema>, Routes } from "@civic/contracts"
-├── import type { <Response>, <Query>, <CreateBody>, … } from "@civic/contracts"
+├── import { <ResponseSchema>, Routes } from "@myorg/contracts"
+├── import type { <Response>, <Query>, <CreateBody>, … } from "@myorg/contracts"
 │
 ├── export type { <Response> as <Alias> }
 │
@@ -103,14 +103,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { parseResponse } from "../lib/parse-response";
 import { useTypedListQuery } from "../lib/use-typed-query";
-import { PropertyResponseSchema, AssessmentResponseSchema, Routes } from "@civic/contracts";
+import { PropertyResponseSchema, AssessmentResponseSchema, Routes } from "@myorg/contracts";
 import type {
     PropertyResponse,
     PaginatedResponse,
     PropertyQuery,
     CreatePropertyBody,
     UpdatePropertyBody,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 
 export type { PropertyResponse as Property, PropertyQuery as PropertyFilters };
 

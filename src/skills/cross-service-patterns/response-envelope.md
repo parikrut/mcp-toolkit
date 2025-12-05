@@ -92,7 +92,7 @@ Frontend/External                         Service A                        Servi
 5. **Always call `unwrapEnvelope()` when consuming another service's response.** The `BaseServiceClient` does this automatically — never call it manually in concrete clients.
 6. **`unwrapEnvelope` is idempotent-safe.** If the value is not an envelope (no `success` + `data` keys), it returns the value as-is. This prevents double-unwrapping issues.
 7. **Do not add fields to the envelope** (e.g., `meta`, `pagination`) at the interceptor level. Pagination metadata belongs inside the `data` payload itself.
-8. **Import from `@civic/common`.** Both `ResponseEnvelopeInterceptor` and `unwrapEnvelope` are re-exported from the common package barrel.
+8. **Import from `@myorg/common`.** Both `ResponseEnvelopeInterceptor` and `unwrapEnvelope` are re-exported from the common package barrel.
 9. **The interceptor must be registered AFTER other transform interceptors** (e.g., `ClassSerializerInterceptor`) so that serialization happens before envelope wrapping.
 10. **Do not rely on the envelope shape in service-to-service code.** Always go through `BaseServiceClient` which unwraps automatically. If you ever use raw `fetch()` (you shouldn't), you must call `unwrapEnvelope()` yourself.
 
@@ -139,7 +139,7 @@ export function unwrapEnvelope<T>(value: unknown): T;
 ### Registration in `main.ts`
 
 ```typescript
-import { ResponseEnvelopeInterceptor } from "@civic/common";
+import { ResponseEnvelopeInterceptor } from "@myorg/common";
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
@@ -244,19 +244,19 @@ export class ResponseEnvelopeInterceptor implements NestInterceptor {
 ### Registration in a Service's `main.ts`
 
 ```typescript
-// modules/domain/property-tax/src/main.ts
+// modules/domain/my-product/src/main.ts
 
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, ClassSerializerInterceptor } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { ResponseEnvelopeInterceptor } from "@civic/common";
+import { ResponseEnvelopeInterceptor } from "@myorg/common";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     // Global prefix for all routes
-    app.setGlobalPrefix("api/property-tax");
+    app.setGlobalPrefix("api/my-product");
 
     // Validation pipe for incoming DTOs
     app.useGlobalPipes(
@@ -286,7 +286,7 @@ bootstrap();
 **Controller returns raw data:**
 
 ```typescript
-// modules/domain/property-tax/src/controllers/property.controller.ts
+// modules/domain/my-product/src/controllers/property.controller.ts
 
 @Controller("properties")
 export class PropertyController {
@@ -338,7 +338,7 @@ export class PropertyController {
 ### Frontend Usage Pattern
 
 ```typescript
-// apps/property-tax-web/src/api/client.ts
+// apps/my-app-web/src/api/client.ts
 
 interface ApiResponse<T> {
     success: boolean;
@@ -365,14 +365,14 @@ async function fetchApi<T>(path: string): Promise<T> {
 }
 
 // Usage:
-const property = await fetchApi<PropertyDto>("/property-tax/properties/prop-001");
+const property = await fetchApi<PropertyDto>("/my-product/properties/prop-001");
 // property is already unwrapped — { id, rollNumber, address, ... }
 ```
 
 ### Health Endpoint (Excluded from Envelope)
 
 ```typescript
-// modules/domain/property-tax/src/controllers/health.controller.ts
+// modules/domain/my-product/src/controllers/health.controller.ts
 
 @Controller("health")
 export class HealthController {

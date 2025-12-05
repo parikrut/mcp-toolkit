@@ -4,7 +4,7 @@
 
 **Type:** Injectable Database Client  
 **Layer:** Data / Persistence  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/src/prisma.service.ts`
+**Reference Implementation:** `modules/domain/revenue/order-management/src/prisma.service.ts`
 
 ## 2. Overview
 
@@ -80,7 +80,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
  * Resource Management — Prisma Service
  *
  * Database topology: 1 database per module (DB-per-service)
- *   DB:  resource_management
+ *   DB:  resource_service
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {

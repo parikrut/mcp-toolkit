@@ -73,7 +73,7 @@ defined once and stay consistent across the entire stack.
    strings.
 9. **Group routes by domain area** using inline comments for readability.
 10. **Routes are exported from the contracts barrel** and available via
-    `import { Routes } from "@civic/contracts"`.
+    `import { Routes } from "@myorg/contracts"`.
 
 ## 4. Structure
 
@@ -164,9 +164,9 @@ export const Routes = {
     pap: "/pap",
     remittance: "/remittance",
     refunds: "/refunds",
-    taxCertificates: "/tax-certificates",
+    taxCertificates: "/certificate-service",
     propertyInquiry: "/property-inquiry",
-    taxSales: "/tax-sales",
+    taxSales: "/auction-services",
     tenders: "/tenders",
     vestingOrders: "/vesting-orders",
     encumbrances: "/encumbrances",
@@ -201,7 +201,7 @@ export const PropertyContract = {
         query: PropertyQuerySchema,
         response: PropertyListResponseSchema,
         summary: "List properties with pagination and filters",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     getProperty: defineEndpoint({
         method: "GET",
@@ -209,7 +209,7 @@ export const PropertyContract = {
         params: PropertyIdParamsSchema,
         response: PropertyResponseSchema,
         summary: "Get property by ID",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 } as const;
 ```
@@ -228,7 +228,7 @@ export const AssessmentContract = {
         query: AssessmentQuerySchema,
         response: AssessmentListResponseSchema,
         summary: "List assessments for a property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     // Also available as a top-level collection:
     listAssessments: defineEndpoint({
@@ -237,7 +237,7 @@ export const AssessmentContract = {
         query: AssessmentQuerySchema,
         response: AssessmentListResponseSchema,
         summary: "List all assessments",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 } as const;
 ```
@@ -245,8 +245,8 @@ export const AssessmentContract = {
 ### Frontend Usage
 
 ```typescript
-// apps/property-tax-web/src/services/property.api.ts
-import { Routes } from "@civic/contracts";
+// apps/my-app-web/src/services/property.api.ts
+import { Routes } from "@myorg/contracts";
 
 export const propertyApi = {
     list: (query: PropertyQuery) =>
@@ -262,7 +262,7 @@ export const propertyApi = {
 
 ```typescript
 // Integration test
-import { Routes } from "@civic/contracts";
+import { Routes } from "@myorg/contracts";
 
 describe("PropertyController", () => {
     it("should list properties", async () => {

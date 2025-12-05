@@ -41,7 +41,7 @@ transformed into human-readable summary metrics for a page.
    Lucide icon wrapped in `aria-hidden="true"`.
 6. **Exports from the feature barrel.** Re-export via
    `src/features/<domain>/index.ts` (see [barrel-exports.md](barrel-exports.md)).
-7. **Uses `@civic/ui` shared components.** `StatCard` and `ScrollReveal` are
+7. **Uses `@myorg/ui` shared components.** `StatCard` and `ScrollReveal` are
    imported from the design-system package.
 
 ## 4. Structure
@@ -50,9 +50,9 @@ transformed into human-readable summary metrics for a page.
 src/features/<domain>/<domain>.stats.tsx
 ├── import { useMemo } from "react"
 ├── import { Icon1, Icon2, … } from "lucide-react"
-├── import { StatCard, ScrollReveal } from "@civic/ui"
+├── import { StatCard, ScrollReveal } from "@myorg/ui"
 ├── import { use<Domain> } from "../../hooks/use-<domain>"
-├── import type { <Domain>Response } from "@civic/contracts"
+├── import type { <Domain>Response } from "@myorg/contracts"
 │
 └── export const <Domain>Stats = () => {
         const { data } = use<Domain>({ limit: 100 })
@@ -92,9 +92,9 @@ src/features/<domain>/<domain>.stats.tsx
 // src/features/properties/properties.stats.tsx
 import { useMemo } from "react";
 import { Building2, Home, Briefcase, Factory } from "lucide-react";
-import { StatCard, ScrollReveal } from "@civic/ui";
+import { StatCard, ScrollReveal } from "@myorg/ui";
 import { useProperties } from "../../hooks/use-properties";
-import type { PropertyResponse } from "@civic/contracts";
+import type { PropertyResponse } from "@myorg/contracts";
 
 export const PropertiesStats = () => {
     const { data } = useProperties({ limit: 100 });

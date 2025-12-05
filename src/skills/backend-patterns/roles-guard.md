@@ -182,8 +182,8 @@ export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
 
 ```typescript
 import { Controller, Get, Post, Body } from "@nestjs/common";
-import { Roles, CurrentUser } from "@civic/common";
-import { RequestUser } from "@civic/common";
+import { Roles, CurrentUser } from "@myorg/common";
+import { RequestUser } from "@myorg/common";
 
 @Controller("assessments")
 export class AssessmentController {
@@ -215,7 +215,7 @@ export class AssessmentController {
 
 ```typescript
 import { APP_GUARD } from "@nestjs/core";
-import { AuthGuard, RolesGuard } from "@civic/common";
+import { AuthGuard, RolesGuard } from "@myorg/common";
 
 @Module({
     providers: [

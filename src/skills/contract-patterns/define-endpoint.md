@@ -180,7 +180,7 @@ export const PropertyContract = {
         query: PropertyQuerySchema,
         response: PropertyListResponseSchema,
         summary: "List properties with pagination and filters",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 
     // GET /properties/:id — single entity by UUID
@@ -190,7 +190,7 @@ export const PropertyContract = {
         params: PropertyIdParamsSchema,
         response: PropertyResponseSchema,
         summary: "Get property by ID",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 
     // POST /properties — create new entity
@@ -200,7 +200,7 @@ export const PropertyContract = {
         body: CreatePropertyBodySchema,
         response: PropertyResponseSchema,
         summary: "Create a new property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 
     // PUT /properties/:id — full update
@@ -211,7 +211,7 @@ export const PropertyContract = {
         body: UpdatePropertyBodySchema,
         response: PropertyResponseSchema,
         summary: "Update an existing property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 
     // DELETE /properties/:id — soft or hard delete
@@ -221,7 +221,7 @@ export const PropertyContract = {
         params: PropertyIdParamsSchema,
         response: z.object({ success: z.literal(true) }),
         summary: "Delete a property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 } as const;
 
@@ -233,8 +233,8 @@ export type PropertyContractType = typeof PropertyContract;
 The frontend API service reads the contract to produce a typed fetch wrapper:
 
 ```typescript
-// apps/property-tax-web/src/services/property.api.ts
-import { PropertyContract } from "@civic/contracts";
+// apps/my-app-web/src/services/property.api.ts
+import { PropertyContract } from "@myorg/contracts";
 import { createTypedApi } from "../lib/api-client";
 
 // createTypedApi() infers params/query/body/response types from contract
@@ -254,8 +254,8 @@ export const propertyApi = {
 ### Backend Consumer — NestJS Controller
 
 ```typescript
-// modules/domain/revenue/assessment-roll/src/controllers/property.controller.ts
-import { PropertyContract, PropertyQuerySchema } from "@civic/contracts";
+// modules/domain/revenue/order-management/src/controllers/property.controller.ts
+import { PropertyContract, PropertyQuerySchema } from "@myorg/contracts";
 
 @Controller(PropertyContract.listProperties.path)
 export class PropertyController {
@@ -272,7 +272,7 @@ export class PropertyController {
 
 ```typescript
 import { z } from "zod";
-import { PropertyContract } from "@civic/contracts";
+import { PropertyContract } from "@myorg/contracts";
 
 // Extract response type from any endpoint contract
 type ListResponse = z.infer<typeof PropertyContract.listProperties.response>;

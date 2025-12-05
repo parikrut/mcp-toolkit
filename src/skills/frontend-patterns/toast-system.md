@@ -16,8 +16,8 @@ hook. A global `emitToast()` function allows non-React code (e.g.
 | --------------- | --------------------- | ------------------------------------ |
 | `ToastProvider` | `hooks/use-toast.tsx` | Context + auto-dismiss + render      |
 | `useToast()`    | `hooks/use-toast.tsx` | Hook API: `success`, `error`, `info` |
-| `emitToast()`   | `@civic/ui`           | Global event emitter (non-React)     |
-| `onToast()`     | `@civic/ui`           | Subscribe to global toast events     |
+| `emitToast()`   | `@myorg/ui`           | Global event emitter (non-React)     |
+| `onToast()`     | `@myorg/ui`           | Subscribe to global toast events     |
 
 Toasts auto-dismiss after 4 seconds. The provider subscribes to the global
 `onToast` emitter so that the `QueryClient` global error handlers (configured
@@ -36,7 +36,7 @@ in `main.tsx`) can emit toasts without being inside a React component tree.
    ephemeral.
 5. **Position:** `fixed bottom-4 right-4 z-9999`.
 6. **Accessible:** Each toast has `role="alert"` for screen readers.
-7. **`extractApiError()`** from `@civic/ui` should be used to extract a
+7. **`extractApiError()`** from `@myorg/ui` should be used to extract a
    human-readable message from Axios errors before passing to `toast.error()`.
 8. **`ToastProvider` wraps the entire app** in `main.tsx`, above
    `BrowserRouter` and `AuthProvider`.
@@ -59,7 +59,7 @@ src/hooks/use-toast.tsx
 └── useToast() hook → { success, error, info }
 ```
 
-**Global emitter (in @civic/ui):**
+**Global emitter (in @myorg/ui):**
 
 ```
 emitToast({ variant, title, description })  ← fires a custom event
@@ -71,7 +71,7 @@ onToast(callback)                           ← returns unsubscribe fn
 ```tsx
 // src/hooks/use-toast.tsx
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { onToast } from "@civic/ui";
+import { onToast } from "@myorg/ui";
 
 type ToastVariant = "success" | "error" | "info";
 

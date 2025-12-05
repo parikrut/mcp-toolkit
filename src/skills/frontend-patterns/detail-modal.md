@@ -5,7 +5,7 @@
 ## 1. Component Pattern
 
 A **Detail Modal** is a feature component rendered inside a `Modal` from
-`@civic/ui`. It receives an entity (or entity ID) as a prop, fetches
+`@myorg/ui`. It receives an entity (or entity ID) as a prop, fetches
 additional data if needed, and displays fields in a card-based
 key-value layout. It is read-only — edit/delete actions are handled by
 separate [Form](form.md) or [Action Dialog](action-dialog.md) components.
@@ -19,7 +19,7 @@ list page.
 | Zone             | Content                                              |
 | ---------------- | ---------------------------------------------------- |
 | **Grid header**  | Key fields (`DetailRow` pairs) in a 2-column grid    |
-| **Sub-sections** | Related data cards (instalments, line items, etc.)   |
+| **Sub-sections** | Related data cards (installments, line items, etc.)   |
 | **Footer**       | Close button, optional action buttons (email, print) |
 
 Some modals receive the full entity as a prop (pre-fetched by the parent).
@@ -50,9 +50,9 @@ Others receive only an `entityId` and fetch details internally via a hook.
 
 ```
 src/features/<domain>/<entity>-detail-modal.tsx
-├── import { Badge, Card, Spinner, Button, formatCurrency } from "@civic/ui"
+├── import { Badge, Card, Spinner, Button, formatCurrency } from "@myorg/ui"
 ├── import { use<Entity> } from "../../hooks/…"
-├── import type { <Entity>Response } from "@civic/contracts"
+├── import type { <Entity>Response } from "@myorg/contracts"
 │
 ├── const statusVariant: Record<Status, BadgeVariant> = { … }
 │
@@ -87,8 +87,8 @@ src/features/<domain>/<entity>-detail-modal.tsx
 
 ```tsx
 // src/features/appeals/appeal-detail-modal.tsx
-import { Badge, Card, Button, formatCurrency, type BadgeVariant } from "@civic/ui";
-import type { AppealResponse } from "@civic/contracts";
+import { Badge, Card, Button, formatCurrency, type BadgeVariant } from "@myorg/ui";
+import type { AppealResponse } from "@myorg/contracts";
 
 const statusVariant = (s: string): BadgeVariant => {
     const map: Record<string, BadgeVariant> = {

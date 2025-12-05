@@ -1,6 +1,6 @@
 # Contract Patterns
 
-> Canonical reference for the `@civic/contracts` shared package — the single
+> Canonical reference for the `@myorg/contracts` shared package — the single
 > source of truth for API shapes, event payloads, and validation schemas.
 > Each pattern document below is self-contained with five sections:
 > **Component Pattern**, **Overview**, **Rules**, **Structure**, and **Example Implementation**.
@@ -13,7 +13,7 @@ response validation, Swagger generation, TypeScript type inference, and
 frontend typed API clients. No duplication — one schema, many consumers.
 
 ```
-                    @civic/contracts
+                    @myorg/contracts
                    ┌─────────────────┐
                    │  common/         │   Shared building blocks
                    │   base, money,   │   (BaseEntity, Money,

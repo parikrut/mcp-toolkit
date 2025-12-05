@@ -10,19 +10,19 @@
 
 ## 2. Overview
 
-The `RmqModule` is a NestJS **DynamicModule factory** that encapsulates all RabbitMQ connection and configuration boilerplate. Domain modules never configure RMQ connections directly — they call `RmqModule.register()` with a token name and queue name, and receive a fully-configured `CivicRmqClient` instance ready for dependency injection.
+The `RmqModule` is a NestJS **DynamicModule factory** that encapsulates all RabbitMQ connection and configuration boilerplate. Domain modules never configure RMQ connections directly — they call `RmqModule.register()` with a token name and queue name, and receive a fully-configured `CustomRmqClient` instance ready for dependency injection.
 
 This module is the single point of configuration for:
 
 - **Connection URL** — read from `RABBITMQ_URL` environment variable
-- **Exchange configuration** — `civic.revenue` (topic type, durable) for revenue domain events
-- **Dead-letter queue (DLQ)** — `civic.dlx` exchange for failed messages
+- **Exchange configuration** — `myorg.domain` (topic type, durable) for revenue domain events
+- **Dead-letter queue (DLQ)** — `myorg.dlx` exchange for failed messages
 - **Prefetch count** — 10 messages per consumer (with manual ack via `noAck: false`)
 - **Queue durability** — all queues are durable (survive broker restarts)
 
 The `register()` static method returns a `DynamicModule` that:
 
-1. Creates a `CivicRmqClient` instance (custom `ClientRMQ` with topic exchange support)
+1. Creates a `CustomRmqClient` instance (custom `ClientRMQ` with topic exchange support)
 2. Registers it as a provider under the given `name` token
 3. Exports the provider so importing modules can inject it via `@Inject(name)`
 
@@ -33,9 +33,9 @@ This pattern ensures that every module in the system uses **identical** RMQ conf
 1. **MUST** be a `@Module({})` decorated class with a static `register()` method that returns `DynamicModule`.
 2. **MUST** accept an `RmqModuleOptions` object with `name` (injection token) and `queue` (RabbitMQ queue name).
 3. **MUST** read the RabbitMQ connection URL from `process.env.RABBITMQ_URL` — never hardcode connection strings.
-4. **MUST** create a `CivicRmqClient` instance (not a standard `ClientRMQ`) to enable topic exchange routing.
-5. **MUST** configure the exchange as topic type and durable: `{ exchange: "civic.<domain>", exchangeType: "topic" }`.
-6. **MUST** configure dead-letter exchange on every queue: `arguments: { "x-dead-letter-exchange": "civic.dlx" }`.
+4. **MUST** create a `CustomRmqClient` instance (not a standard `ClientRMQ`) to enable topic exchange routing.
+5. **MUST** configure the exchange as topic type and durable: `{ exchange: "myorg.<domain>", exchangeType: "topic" }`.
+6. **MUST** configure dead-letter exchange on every queue: `arguments: { "x-dead-letter-exchange": "myorg.dlx" }`.
 7. **MUST** set `durable: true` on all queue options — queues survive broker restarts.
 8. **MUST** set `noAck: false` to enable manual acknowledgment — messages are only removed from the queue when the consumer successfully processes them.
 9. **MUST** set a reasonable `prefetchCount` (default: 10) to prevent a single consumer from being overwhelmed.
@@ -53,7 +53,7 @@ packages/common/
 └── src/
     └── events/
         ├── rmq.module.ts          # DynamicModule factory
-        ├── civic-rmq-client.ts    # Custom ClientRMQ (see rmq-client.md)
+        ├── custom-rmq-client.ts    # Custom ClientRMQ (see rmq-client.md)
         └── index.ts               # Barrel export
 ```
 
@@ -62,12 +62,12 @@ packages/common/
 ```typescript
 // ─── Imports ─────────────────────────────────────────────────────────
 import { DynamicModule, Module } from "@nestjs/common";            // NestJS module system
-import { CivicRmqClient } from "./civic-rmq-client";              // Custom RMQ client
+import { CustomRmqClient } from "./custom-rmq-client";              // Custom RMQ client
 
 // ─── Options Interface ──────────────────────────────────────────────
 interface RmqModuleOptions {
-    name: string;     // Injection token (e.g., "ASSESSMENT_ROLL_QUEUE")
-    queue: string;    // RabbitMQ queue name (e.g., "assessment-roll-events")
+    name: string;     // Injection token (e.g., "ORDER_MANAGEMENT_QUEUE")
+    queue: string;    // RabbitMQ queue name (e.g., "order-management-events")
 }
 
 // ─── Module Class ────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export class RmqModule {
     static register(options: RmqModuleOptions): DynamicModule {
         return {
             module: RmqModule,
-            providers: [{ provide: options.name, useFactory: () => new CivicRmqClient({...}) }],
+            providers: [{ provide: options.name, useFactory: () => new CustomRmqClient({...}) }],
             exports: [options.name],
         };
     }
@@ -86,24 +86,24 @@ export class RmqModule {
 ### How Modules Use RmqModule
 
 ```typescript
-// In a domain module (e.g., assessment-roll.module.ts)
+// In a domain module (e.g., order-management.module.ts)
 import { Module } from "@nestjs/common";
-import { RmqModule } from "@civic/common";
-import { AssessmentRollPublisher } from "./events/publishers/assessment-roll.publisher";
+import { RmqModule } from "@myorg/common";
+import { OrderManagementPublisher } from "./events/publishers/order-management.publisher";
 
-const ASSESSMENT_ROLL_QUEUE = "ASSESSMENT_ROLL_QUEUE";
+const ORDER_MANAGEMENT_QUEUE = "ORDER_MANAGEMENT_QUEUE";
 
 @Module({
     imports: [
         RmqModule.register({
-            name: ASSESSMENT_ROLL_QUEUE, // Token name
-            queue: "assessment-roll-events", // Physical queue name
+            name: ORDER_MANAGEMENT_QUEUE, // Token name
+            queue: "order-management-events", // Physical queue name
         }),
     ],
-    providers: [AssessmentRollPublisher], // Publisher injects the client
-    exports: [AssessmentRollPublisher],
+    providers: [OrderManagementPublisher], // Publisher injects the client
+    exports: [OrderManagementPublisher],
 })
-export class AssessmentRollModule {}
+export class OrderManagementModule {}
 ```
 
 ### RMQ Topology Diagram
@@ -114,7 +114,7 @@ export class AssessmentRollModule {}
 │                                                                 │
 │  ┌──────────────────────┐    ┌──────────────────────────────┐   │
 │  │  Exchange:            │    │  Exchange:                    │   │
-│  │  civic.revenue        │    │  civic.dlx                    │   │
+│  │  myorg.domain        │    │  myorg.dlx                    │   │
 │  │  Type: topic          │    │  Type: fanout                 │   │
 │  │  Durable: true        │    │  (Dead Letter Exchange)       │   │
 │  └──────────┬───────────┘    └──────────────┬───────────────┘   │
@@ -123,11 +123,11 @@ export class AssessmentRollModule {}
 │             │                                │                   │
 │  ┌──────────▼───────────┐    ┌──────────────▼───────────────┐   │
 │  │  Queue:               │    │  Queue:                       │   │
-│  │  assessment-roll-     │    │  dead-letter-queue             │   │
+│  │  order-management-     │    │  dead-letter-queue             │   │
 │  │    events             │    │  (for manual investigation)    │   │
 │  │  Durable: true        │    │                               │   │
 │  │  x-dead-letter-       │    └───────────────────────────────┘   │
-│  │    exchange: civic.dlx│                                       │
+│  │    exchange: myorg.dlx│                                       │
 │  └──────────┬───────────┘                                       │
 │             │                                                   │
 └─────────────┼───────────────────────────────────────────────────┘
@@ -142,7 +142,7 @@ export class AssessmentRollModule {}
 
 ````typescript
 import { DynamicModule, Module } from "@nestjs/common";
-import { CivicRmqClient } from "./civic-rmq-client";
+import { CustomRmqClient } from "./custom-rmq-client";
 
 /**
  * Options for registering a RabbitMQ module.
@@ -153,7 +153,7 @@ interface RmqModuleOptions {
     name: string;
     /** Physical RabbitMQ queue name */
     queue: string;
-    /** Exchange name override (default: "civic.revenue") */
+    /** Exchange name override (default: "myorg.domain") */
     exchange?: string;
     /** Prefetch count override (default: 10) */
     prefetchCount?: number;
@@ -162,18 +162,18 @@ interface RmqModuleOptions {
 @Module({})
 export class RmqModule {
     /**
-     * Creates a DynamicModule that provides a configured CivicRmqClient.
+     * Creates a DynamicModule that provides a configured CustomRmqClient.
      *
      * Usage:
      * ```typescript
      * RmqModule.register({
-     *     name: "ASSESSMENT_ROLL_QUEUE",
-     *     queue: "assessment-roll-events",
+     *     name: "ORDER_MANAGEMENT_QUEUE",
+     *     queue: "order-management-events",
      * })
      * ```
      */
     static register(options: RmqModuleOptions): DynamicModule {
-        const { name, queue, exchange = "civic.revenue", prefetchCount = 10 } = options;
+        const { name, queue, exchange = "myorg.domain", prefetchCount = 10 } = options;
 
         return {
             module: RmqModule,
@@ -191,13 +191,13 @@ export class RmqModule {
                             return null;
                         }
 
-                        return new CivicRmqClient({
+                        return new CustomRmqClient({
                             urls: [rabbitmqUrl],
                             queue,
                             queueOptions: {
                                 durable: true,
                                 arguments: {
-                                    "x-dead-letter-exchange": "civic.dlx",
+                                    "x-dead-letter-exchange": "myorg.dlx",
                                 },
                             },
                             exchange,
@@ -221,47 +221,47 @@ When multiple domain modules in the same application need RMQ:
 ```typescript
 // app.module.ts
 import { Module } from "@nestjs/common";
-import { RmqModule } from "@civic/common";
-import { AssessmentRollModule } from "./modules/assessment-roll/assessment-roll.module";
-import { TaxBillingModule } from "./modules/tax-billing/tax-billing.module";
+import { RmqModule } from "@myorg/common";
+import { OrderManagementModule } from "./modules/order-management/order-management.module";
+import { BillingModule } from "./modules/billing/billing.module";
 import { PaymentModule } from "./modules/payment/payment.module";
 
 @Module({
     imports: [
         // Each module registers its own queue
-        AssessmentRollModule,
-        TaxBillingModule,
+        OrderManagementModule,
+        BillingModule,
         PaymentModule,
     ],
 })
 export class AppModule {}
 
-// ─── assessment-roll.module.ts ───────────────────────────────────────
+// ─── order-management.module.ts ───────────────────────────────────────
 @Module({
     imports: [
         RmqModule.register({
-            name: "ASSESSMENT_ROLL_QUEUE",
-            queue: "assessment-roll-events",
+            name: "ORDER_MANAGEMENT_QUEUE",
+            queue: "order-management-events",
         }),
     ],
-    providers: [AssessmentRollPublisher, AssessmentRollService],
-    exports: [AssessmentRollPublisher],
+    providers: [OrderManagementPublisher, OrderManagementService],
+    exports: [OrderManagementPublisher],
 })
-export class AssessmentRollModule {}
+export class OrderManagementModule {}
 
-// ─── tax-billing.module.ts ───────────────────────────────────────────
+// ─── billing.module.ts ───────────────────────────────────────────
 @Module({
     imports: [
         RmqModule.register({
-            name: "TAX_BILLING_QUEUE",
-            queue: "tax-billing-events",
+            name: "BILLING_QUEUE",
+            queue: "billing-events",
         }),
     ],
     controllers: [AssessmentSubscriber], // Subscriber listens to assessment events
-    providers: [TaxBillingPublisher, TaxBillingService, InstalmentService],
-    exports: [TaxBillingPublisher],
+    providers: [BillingPublisher, BillingService, InstalmentService],
+    exports: [BillingPublisher],
 })
-export class TaxBillingModule {}
+export class BillingModule {}
 
 // ─── payment.module.ts ───────────────────────────────────────────────
 @Module({
@@ -271,7 +271,7 @@ export class TaxBillingModule {}
             queue: "payment-events",
         }),
     ],
-    controllers: [TaxBillingSubscriber], // Subscriber listens to tax billing events
+    controllers: [BillingSubscriber], // Subscriber listens to billing events
     providers: [PaymentPublisher, PaymentService],
     exports: [PaymentPublisher],
 })
@@ -287,7 +287,7 @@ For modules outside the revenue domain:
 RmqModule.register({
     name: "NOTIFICATION_QUEUE",
     queue: "notification-events",
-    exchange: "civic.platform", // Different exchange for platform events
+    exchange: "myorg.platform", // Different exchange for platform events
     prefetchCount: 20, // Higher throughput for notifications
 });
 ```
@@ -301,7 +301,7 @@ Required environment variables:
 RABBITMQ_URL=amqp://guest:guest@localhost:5672
 
 # Production
-RABBITMQ_URL=amqp://civic_user:secure_password@rabbitmq.internal:5672/civic
+RABBITMQ_URL=amqp://myorg_user:secure_password@rabbitmq.internal:5672/myorg
 ```
 
 ### Unit Test — Verifying Module Registration

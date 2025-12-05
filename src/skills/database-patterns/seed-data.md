@@ -4,7 +4,7 @@
 
 **Type:** Database Seed Script  
 **Layer:** Data / DevOps  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/prisma/seed.ts`
+**Reference Implementation:** `modules/domain/revenue/order-management/prisma/seed.ts`
 
 ## 2. Overview
 
@@ -51,7 +51,7 @@ modules/domain/<domain>/<module>/
 
 ```json
 {
-    "name": "@civic/resource-management",
+    "name": "@myorg/resource-service",
     "prisma": {
         "seed": "tsx prisma/seed.ts"
     }
@@ -338,7 +338,7 @@ const RESOURCES = [
 // ─── Seed Function ──────────────────────────────────────────
 
 async function main() {
-    console.log("Seeding resource-management...");
+    console.log("Seeding resource-service...");
 
     await prisma.$transaction(async (tx) => {
         // ── Categories (parent entities — seed first) ───────

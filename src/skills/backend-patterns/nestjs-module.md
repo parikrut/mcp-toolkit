@@ -4,7 +4,7 @@
 
 **Type:** NestJS Module  
 **Layer:** Composition Root / Dependency Wiring  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/src/assessment-roll.module.ts`
+**Reference Implementation:** `modules/domain/revenue/order-management/src/order-management.module.ts`
 
 ## 2. Overview
 
@@ -22,13 +22,13 @@ Key conventions:
 
 1. **One `@Module()` per microservice.** Each deployable module has exactly one root module file.
 2. **Always import `TerminusModule`.** Health checks are mandatory for Kubernetes liveness/readiness probes.
-3. **Import `RmqModule.register()` for event publishing.** Use the queue constant from `@civic/common` and provide the queue name string.
+3. **Import `RmqModule.register()` for event publishing.** Use the queue constant from `@myorg/common` and provide the queue name string.
 4. **`HealthController` always first in controllers.** Convention: health controller precedes domain controllers.
 5. **`PrismaService` in providers.** Every module that queries the database must provide its own `PrismaService` instance.
 6. **Export only services.** Never export repositories, `PrismaService`, publishers, or clients. External consumers interact through the service API.
 7. **One provider per class.** Do not use factory providers or `useValue` unless integrating with a third-party library. Prefer class-based providers.
-8. **RMQ queue name is kebab-case.** Matches the service name: e.g., `assessment-roll`, `tax-billing`, `citizen-account`.
-9. **Queue token constant.** Define `QUEUE_TOKEN` as a string constant (e.g., `"ASSESSMENT_ROLL_SERVICE"`) and use it as the `name` in `RmqModule.register()`.
+8. **RMQ queue name is kebab-case.** Matches the service name: e.g., `order-management`, `billing`, `citizen-account`.
+9. **Queue token constant.** Define `QUEUE_TOKEN` as a string constant (e.g., `"ORDER_MANAGEMENT_SERVICE"`) and use it as the `name` in `RmqModule.register()`.
 10. **Import ordering.** Imports: infrastructure modules first (`TerminusModule`, `RmqModule`), then shared modules.
 
 ## 4. Structure
@@ -56,7 +56,7 @@ modules/domain/<domain>/<module>/src/
 ```typescript
 import { Module } from "@nestjs/common";
 import { TerminusModule } from "@nestjs/terminus";
-import { RmqModule } from "@civic/common";
+import { RmqModule } from "@myorg/common";
 
 // Controllers
 import { HealthController } from "./controllers/health.controller";
@@ -174,5 +174,5 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 - `RmqModule.register()` accepts `{ name, queue }` — `name` is the DI injection token the publisher uses (`@Inject(QUEUE_TOKEN)`), and `queue` is the RabbitMQ queue name.
 - The `exports` array contains **only** `ResourceService` and `SubResourceService`. No repository, no `PrismaService`, no publisher is ever exported.
 - `HealthController` is always the first controller in the array — this is a team convention for readability.
-- The module class name follows the pattern `<ModuleName>Module` in PascalCase (e.g., `AssessmentRollModule`, `TaxBillingModule`).
+- The module class name follows the pattern `<ModuleName>Module` in PascalCase (e.g., `OrderManagementModule`, `BillingModule`).
 - Every provider is listed explicitly — no `useFactory`, `useValue`, or dynamic providers unless integrating with external libraries.

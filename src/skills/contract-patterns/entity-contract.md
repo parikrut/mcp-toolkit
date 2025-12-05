@@ -23,7 +23,7 @@ strict **7-section structure** that keeps schemas co-located and discoverable.
 | **7. Entity & FindManyOptions** | Prisma-facing schemas for the repository layer                       |
 
 Both frontend and backend import from the same contract file via the
-`@civic/contracts` package. The contract is the **only** place where field
+`@myorg/contracts` package. The contract is the **only** place where field
 names, types, validation rules, and API shapes are defined.
 
 ## 3. Rules
@@ -48,7 +48,7 @@ names, types, validation rules, and API shapes are defined.
 6. **`PaginatedResponseSchema(itemSchema)` factory wraps the item schema.**
    Never hand-roll pagination metadata.
 7. **Both frontend and backend import from the same contract.** No
-   backend-only or frontend-only duplicates. The `@civic/contracts` barrel
+   backend-only or frontend-only duplicates. The `@myorg/contracts` barrel
    is the single import source.
 8. **Type exports use `z.infer<typeof Schema>`.** Never maintain a parallel
    hand-written interface.
@@ -59,7 +59,7 @@ names, types, validation rules, and API shapes are defined.
 11. **API contracts are grouped into a single `const <Entity>Contract = { … } as const`** object.
     Each key is a verb-noun function name (e.g. `listProperties`, `getProperty`, `createProperty`).
 12. **Tags array** in `defineEndpoint()` uses the domain area as the first tag
-    (e.g. `["revenue", "assessment-roll"]`).
+    (e.g. `["revenue", "order-management"]`).
 13. **Entity schemas (section 7) mirror the Prisma model exactly** — column
     names, nullable fields, date coercion. They are used by the repository
     layer for runtime validation of database results.
@@ -266,7 +266,7 @@ export const PropertyContract = {
         query: PropertyQuerySchema,
         response: PropertyListResponseSchema,
         summary: "List properties with pagination and filters",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     getProperty: defineEndpoint({
         method: "GET",
@@ -274,7 +274,7 @@ export const PropertyContract = {
         params: PropertyIdParamsSchema,
         response: PropertyResponseSchema,
         summary: "Get property by ID",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     createProperty: defineEndpoint({
         method: "POST",
@@ -282,7 +282,7 @@ export const PropertyContract = {
         body: CreatePropertyBodySchema,
         response: PropertyResponseSchema,
         summary: "Create a new property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     updateProperty: defineEndpoint({
         method: "PUT",
@@ -291,7 +291,7 @@ export const PropertyContract = {
         body: UpdatePropertyBodySchema,
         response: PropertyResponseSchema,
         summary: "Update an existing property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
     deleteProperty: defineEndpoint({
         method: "DELETE",
@@ -299,7 +299,7 @@ export const PropertyContract = {
         params: PropertyIdParamsSchema,
         response: z.object({ success: z.literal(true) }),
         summary: "Delete a property",
-        tags: ["revenue", "assessment-roll"],
+        tags: ["revenue", "order-management"],
     }),
 } as const;
 
@@ -451,7 +451,7 @@ export const TaxBillContract = {
         path: Routes.taxBills,
         query: TaxBillQuerySchema,
         response: TaxBillListResponseSchema,
-        summary: "List tax bills with pagination and filters",
+        summary: "List billing invoices with pagination and filters",
         tags: ["revenue", "billing"],
     }),
     getTaxBill: defineEndpoint({
@@ -459,7 +459,7 @@ export const TaxBillContract = {
         path: `${Routes.taxBills}/:id`,
         params: TaxBillIdParamsSchema,
         response: TaxBillResponseSchema,
-        summary: "Get tax bill by ID",
+        summary: "Get billing invoice by ID",
         tags: ["revenue", "billing"],
     }),
     createTaxBill: defineEndpoint({
@@ -467,7 +467,7 @@ export const TaxBillContract = {
         path: Routes.taxBills,
         body: CreateTaxBillBodySchema,
         response: TaxBillResponseSchema,
-        summary: "Generate a new tax bill",
+        summary: "Generate a new billing invoice",
         tags: ["revenue", "billing"],
     }),
     updateTaxBill: defineEndpoint({
@@ -476,7 +476,7 @@ export const TaxBillContract = {
         params: TaxBillIdParamsSchema,
         body: UpdateTaxBillBodySchema,
         response: TaxBillResponseSchema,
-        summary: "Update an existing tax bill",
+        summary: "Update an existing billing invoice",
         tags: ["revenue", "billing"],
     }),
 } as const;

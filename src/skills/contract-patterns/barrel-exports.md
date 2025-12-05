@@ -1,11 +1,11 @@
 # Contract Package Barrel Exports
 
-> Pattern documentation for the barrel export structure of the `@civic/contracts` package — the layered re-export chain from leaf modules up to a single top-level `index.ts` that consumers import from.
+> Pattern documentation for the barrel export structure of the `@myorg/contracts` package — the layered re-export chain from leaf modules up to a single top-level `index.ts` that consumers import from.
 
 ## 1. Component Pattern
 
 The **Barrel Export** pattern uses a chain of `index.ts` files that re-export
-every schema, type, constant, and helper from the `@civic/contracts` package.
+every schema, type, constant, and helper from the `@myorg/contracts` package.
 The top-level barrel at `src/index.ts` is the **only** import path consumers
 should ever use. Internal directory barrels (`common/index.ts`,
 `contracts/index.ts`, `events/index.ts`) aggregate their children so the
@@ -30,15 +30,15 @@ import {
     PropertyQuerySchema,
     MoneySchema,
     Routes,
-    AssessmentRollEvents,
+    OrderManagementEvents,
     PaginatedResponseSchema,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 ```
 
 ```typescript
 // ❌ FORBIDDEN — never import from deep paths
-import { MoneySchema } from "@civic/contracts/src/common/money";
-import { Routes } from "@civic/contracts/src/contracts/routes";
+import { MoneySchema } from "@myorg/contracts/src/common/money";
+import { Routes } from "@myorg/contracts/src/contracts/routes";
 ```
 
 ## 3. Rules
@@ -49,7 +49,7 @@ import { Routes } from "@civic/contracts/src/contracts/routes";
 2. **Top-level barrel is the only import consumers use.**
 
     ```typescript
-    import { X } from "@civic/contracts";
+    import { X } from "@myorg/contracts";
     ```
 
     This applies to frontend apps, backend modules, and test files equally.
@@ -57,9 +57,9 @@ import { Routes } from "@civic/contracts/src/contracts/routes";
 3. **Never import from deep paths.** The following are **forbidden**:
 
     ```typescript
-    "@civic/contracts/src/common/money";
-    "@civic/contracts/src/contracts/revenue/property.contract";
-    "@civic/contracts/src/events/revenue/assessment-roll.events";
+    "@myorg/contracts/src/common/money";
+    "@myorg/contracts/src/contracts/revenue/property.contract";
+    "@myorg/contracts/src/events/revenue/order-management.events";
     ```
 
     The `package.json` `exports` field enforces this at the package level.
@@ -127,10 +127,10 @@ packages/contracts/src/
 │   │   └── index.ts                            ← REVENUE CONTRACTS BARREL
 │   │       ├── export * from "./property.contract"
 │   │       ├── export * from "./tax-bills.contract"
-│   │       ├── export * from "./assessment-roll.contract"
-│   │       ├── export * from "./tax-levy-rate.contract"
-│   │       ├── export * from "./payment-processing.contract"
-│   │       ├── export * from "./tax-certificates.contract"
+│   │       ├── export * from "./order-management.contract"
+│   │       ├── export * from "./rate-service.contract"
+│   │       ├── export * from "./payment-service.contract"
+│   │       ├── export * from "./certificate-service.contract"
 │   │       └── export * from "./exemptions.contract"
 │   │
 │   └── shared/
@@ -149,12 +149,12 @@ packages/contracts/src/
     │
     ├── revenue/
     │   └── index.ts                            ← REVENUE EVENTS BARREL
-    │       ├── export * from "./assessment-roll.events"
+    │       ├── export * from "./order-management.events"
     │       ├── export * from "./tax-bill.events"
-    │       ├── export * from "./tax-certificate.events"
-    │       ├── export * from "./tax-levy-rate.events"
-    │       ├── export * from "./tax-sale.events"
-    │       └── export * from "./payment-processing.events"
+    │       ├── export * from "./certificate.events"
+    │       ├── export * from "./rate-service.events"
+    │       ├── export * from "./auction.events"
+    │       └── export * from "./payment-service.events"
     │
     └── shared/
         └── index.ts
@@ -180,7 +180,7 @@ packages/contracts/src/
 ```typescript
 // packages/contracts/src/index.ts
 
-// @civic/contracts — Single source of truth for all API boundaries
+// @myorg/contracts — Single source of truth for all API boundaries
 // ─────────────────────────────────────────────────────────────────
 
 // Common building blocks
@@ -224,10 +224,10 @@ export * from "./citizen-portal.contract";
 // packages/contracts/src/contracts/revenue/index.ts
 export * from "./property.contract";
 export * from "./tax-bills.contract";
-export * from "./assessment-roll.contract";
-export * from "./tax-levy-rate.contract";
-export * from "./payment-processing.contract";
-export * from "./tax-certificates.contract";
+export * from "./order-management.contract";
+export * from "./rate-service.contract";
+export * from "./payment-service.contract";
+export * from "./certificate-service.contract";
 export * from "./exemptions.contract";
 ```
 
@@ -244,12 +244,12 @@ export * from "./revenue";
 
 ```typescript
 // packages/contracts/src/events/revenue/index.ts
-export * from "./assessment-roll.events";
+export * from "./order-management.events";
 export * from "./tax-bill.events";
-export * from "./tax-certificate.events";
-export * from "./tax-levy-rate.events";
-export * from "./tax-sale.events";
-export * from "./payment-processing.events";
+export * from "./certificate.events";
+export * from "./rate-service.events";
+export * from "./auction.events";
+export * from "./payment-service.events";
 ```
 
 ### Adding a New Entity — Full Barrel Checklist
@@ -317,7 +317,7 @@ import {
     FleetVehicleQuerySchema,
     FleetVehicleEvents,
     VehicleCreatedEventSchema,
-} from "@civic/contracts";
+} from "@myorg/contracts";
 // All four should resolve without errors.
 ```
 
@@ -327,7 +327,7 @@ The `package.json` enforces single-entry-point imports:
 
 ```json
 {
-    "name": "@civic/contracts",
+    "name": "@myorg/contracts",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -341,5 +341,5 @@ The `package.json` enforces single-entry-point imports:
 }
 ```
 
-This means `import { X } from "@civic/contracts/src/common/money"` will fail
+This means `import { X } from "@myorg/contracts/src/common/money"` will fail
 at the package resolution level — not just by convention, but by configuration.

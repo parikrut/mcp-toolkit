@@ -4,7 +4,7 @@
 
 **Type:** Container Entrypoint Shell Script  
 **Layer:** Infrastructure / Runtime Bootstrap  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/docker-entrypoint.sh`
+**Reference Implementation:** `modules/domain/revenue/order-management/docker-entrypoint.sh`
 
 ## 2. Overview
 
@@ -107,7 +107,7 @@ With `exec`, the Node.js process _is_ PID 1. It receives SIGTERM directly and ca
 The entrypoint script is **identical** across all modules. No changes are needed — just copy the file:
 
 ```bash
-cp modules/domain/revenue/assessment-roll/docker-entrypoint.sh \
+cp modules/domain/revenue/order-management/docker-entrypoint.sh \
    modules/domain/new-domain/new-module/docker-entrypoint.sh
 ```
 

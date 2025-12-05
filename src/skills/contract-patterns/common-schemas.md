@@ -34,13 +34,13 @@ export * from "./audit";
 Consumers import via the top-level barrel:
 
 ```typescript
-import { BaseEntitySchema, MoneySchema, PaginationQuerySchema } from "@civic/contracts";
+import { BaseEntitySchema, MoneySchema, PaginationQuerySchema } from "@myorg/contracts";
 ```
 
 ## 3. Rules
 
-1. **Never import from deep paths.** Always use `@civic/contracts` — never
-   `@civic/contracts/src/common/money`.
+1. **Never import from deep paths.** Always use `@myorg/contracts` — never
+   `@myorg/contracts/src/common/money`.
 2. **Every new common schema must be added to `common/index.ts`.**
 3. **Common schemas must be domain-agnostic.** If a schema is specific to one
    domain (e.g. `PropertyClassSchema`), it belongs in the entity contract, not
@@ -219,7 +219,7 @@ export const MoneySchema = z.object({
 
 export type Money = z.infer<typeof MoneySchema>;
 
-/** Default currency for all monetary values across civic-modules */
+/** Default currency for all monetary values across my-services */
 export const DEFAULT_CURRENCY = "CAD" as const;
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -273,7 +273,7 @@ export function toMoneyOrNull(
 **Usage in service `toResponse()` mappers:**
 
 ```typescript
-import { toMoney, toMoneyOrNull } from "@civic/contracts";
+import { toMoney, toMoneyOrNull } from "@myorg/contracts";
 
 function toResponse(bill: TaxBillEntity): TaxBillResponse {
     return {

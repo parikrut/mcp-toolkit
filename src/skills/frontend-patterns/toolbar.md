@@ -28,7 +28,7 @@ All filter values are managed as URL search parameters via `nuqs` so that:
 - Filters are bookmarkable, shareable, and survive page refreshes.
 - The Toolbar and the Table never need to share React state or props.
 
-Filter enum options reference Zod schemas from `@civic/contracts` to stay in
+Filter enum options reference Zod schemas from `@myorg/contracts` to stay in
 sync with the backend (see [contract-schema.md](contract-schema.md)).
 
 ## 3. Rules
@@ -47,7 +47,7 @@ sync with the backend (see [contract-schema.md](contract-schema.md)).
 6. **Modal state is local.** If the toolbar includes an action that opens a
    modal/wizard, manage the `open` boolean with `useState` and render the
    modal as a sibling inside a Fragment.
-7. **Uses `@civic/ui` components:** `Button`, `SearchInput`, `Input`, `Select`.
+7. **Uses `@myorg/ui` components:** `Button`, `SearchInput`, `Input`, `Select`.
    Icons from `lucide-react`.
 8. **Flex-wrap layout:** `flex flex-wrap items-end gap-3` so controls reflow
    gracefully on smaller screens.
@@ -59,8 +59,8 @@ src/features/<domain>/<domain>.toolbar.tsx
 ├── import { useState } from "react"
 ├── import { Upload, X } from "lucide-react"
 ├── import { useQueryStates } from "nuqs"
-├── import { Button, SearchInput, Input, Select } from "@civic/ui"
-├── import { <EnumSchema> } from "@civic/contracts"
+├── import { Button, SearchInput, Input, Select } from "@myorg/ui"
+├── import { <EnumSchema> } from "@myorg/contracts"
 ├── import { <domain>TableParsers, <domain>TableNuqsOptions } from "./<domain>.table"
 ├── import { <Optional>Modal } from "./<optional>-modal"
 │
@@ -96,8 +96,8 @@ src/features/<domain>/<domain>.toolbar.tsx
 import { useState } from "react";
 import { Upload, X } from "lucide-react";
 import { useQueryStates } from "nuqs";
-import { Button, SearchInput, Input, Select } from "@civic/ui";
-import { PropertyClassSchema } from "@civic/contracts";
+import { Button, SearchInput, Input, Select } from "@myorg/ui";
+import { PropertyClassSchema } from "@myorg/contracts";
 import { propertiesTableParsers, propertiesTableNuqsOptions } from "./properties.table";
 import { AssessmentImportWizard } from "./assessment-import-wizard";
 
@@ -163,7 +163,7 @@ export const PropertiesToolbar = () => {
                 </Button>
                 <Button className="font-semibold" onClick={() => setImportOpen(true)}>
                     <Upload className="mr-1.5 h-4 w-4" />
-                    Import MPAC Roll
+                    Import external provider Roll
                 </Button>
             </div>
             <AssessmentImportWizard open={importOpen} onClose={() => setImportOpen(false)} />

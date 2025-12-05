@@ -367,7 +367,7 @@ import {
     ResponseEnvelopeInterceptor,
     ResponseValidationInterceptor,
     AuditInterceptor,
-} from "@civic/common";
+} from "@myorg/common";
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);

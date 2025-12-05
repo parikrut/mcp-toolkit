@@ -4,7 +4,7 @@
 
 **Type:** Database Schema Definition  
 **Layer:** Data / Persistence  
-**Reference Implementation:** `modules/domain/revenue/assessment-roll/prisma/schema.prisma`
+**Reference Implementation:** `modules/domain/revenue/order-management/prisma/schema.prisma`
 
 ## 2. Overview
 
@@ -87,8 +87,8 @@ modules/domain/<domain>/<module>/
 // Domain module — resource tracking, categorization, and lifecycle.
 //
 // Database topology: 1 database per module (DB-per-service)
-//   DB:  resource_management
-//   URL: postgresql://.../resource_management
+//   DB:  resource_service
+//   URL: postgresql://.../resource_service
 
 generator client {
     provider = "prisma-client"

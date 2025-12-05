@@ -91,7 +91,7 @@ const { data } = use<Domain>({ ...qs });
 ```tsx
 // Defined in: src/features/properties/properties.table.tsx
 import { parseAsInteger, parseAsString, parseAsStringLiteral } from "nuqs";
-import { PropertyClassSchema } from "@civic/contracts";
+import { PropertyClassSchema } from "@myorg/contracts";
 
 export const propertiesTableParsers = {
     page: parseAsInteger.withDefault(1),
