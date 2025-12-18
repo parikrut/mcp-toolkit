@@ -1,12 +1,136 @@
-# MCP Developer Toolkit
+# Dev Skills MCP Server
 
-**Repo:** `github.com/parikrut/mcp-toolkit`
+An [MCP](https://modelcontextprotocol.io/) server that gives AI assistants **specialized development expertise**. Instead of generic coding help, it provides opinionated, battle-tested playbooks for building microservices, frontends, databases, DevOps pipelines, and more.
 
-## What It Is
+Works with **VS Code Copilot (Agent Mode)**, **Claude Desktop**, **Cursor**, and any MCP-compatible client.
 
-An MCP (Model Context Protocol) server that gives AI assistants **specialized development expertise**. Instead of generic coding help, it provides opinionated, battle-tested playbooks for building microservices, frontends, databases, DevOps pipelines, and more.
+---
 
-Works with **VS Code Copilot**, **Claude Desktop**, **Cursor**, and any MCP-compatible client.
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** ≥ 18
+- **npm** ≥ 9
+- **Git**
+- An MCP-compatible client (VS Code 1.99+, Claude Desktop, Cursor, etc.)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/parikrut/mcp-toolkit.git
+cd mcp-toolkit
+npm install
+```
+
+### 2. Build
+
+```bash
+npm run build
+```
+
+This compiles TypeScript into `dist/`.
+
+### 3. Connect to Your AI Client
+
+Pick the client you use and follow the steps below.
+
+---
+
+## Setup — VS Code (GitHub Copilot)
+
+> Requires **VS Code 1.99+** with GitHub Copilot extension.
+
+**Option A — Open this repo directly:**
+
+The repo already includes `.vscode/mcp.json`. Just open the folder in VS Code:
+
+```bash
+code mcp-toolkit
+```
+
+Copilot will auto-discover the server. Switch to **Agent mode** in the Copilot chat panel and you'll see the dev-skills tools available.
+
+**Option B — Add to another project:**
+
+Create `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "dev-skills": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-toolkit/dist/index.js"],
+      "env": {
+        "SKILLS_DIR": "/absolute/path/to/mcp-toolkit/src/skills"
+      }
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/mcp-toolkit` with the actual path where you cloned the repo.
+
+> **Tip:** Use `${workspaceFolder}` if the MCP toolkit is inside your project.
+
+---
+
+## Setup — Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "dev-skills": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-toolkit/dist/index.js"],
+      "env": {
+        "SKILLS_DIR": "/absolute/path/to/mcp-toolkit/src/skills"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after saving.
+
+---
+
+## Setup — Cursor
+
+Open **Settings → MCP Servers → Add Server** and enter:
+
+| Field | Value |
+|-------|-------|
+| Name | `dev-skills` |
+| Command | `node` |
+| Args | `/absolute/path/to/mcp-toolkit/dist/index.js` |
+| Env | `SKILLS_DIR=/absolute/path/to/mcp-toolkit/src/skills` |
+
+---
+
+## Verify It Works
+
+After connecting, ask your AI assistant:
+
+```
+List all available dev skills
+```
+
+You should see 7 categories and 60 skills returned via the `list_skills` tool.
+
+You can also test from the terminal:
+
+```bash
+# Interactive inspector (opens a web UI)
+npm run inspect
+
+# Or pipe JSON-RPC directly
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_skills","arguments":{}}}\n' | node dist/index.js 2>/dev/null
+```
+
+---
 
 ## The Problem
 
@@ -14,7 +138,7 @@ AI assistants know general coding — but they don't know **your team's way of b
 
 ## The Solution
 
-Package your development expertise as **skills** that any AI assistant can read and follow at runtime:
+Package your development expertise as **skills** (Markdown files) that any AI assistant can read and follow at runtime:
 
 ```
 Developer: "Create a new user authentication microservice"
@@ -27,176 +151,147 @@ AI + MCP Server:
   5. Returns standards-compliant code
 ```
 
-## How It Works
-
-```
-┌─────────────────────────┐
-│  AI Client               │
-│  (Copilot / Claude)      │
-│                          │
-│  Discovers MCP tools:    │
-│  • list_skills           │
-│  • get_skill             │
-│  • scaffold              │
-│  • check_standards       │
-└────────────┬────────────┘
-             │ JSON-RPC 2.0
-             ▼
-┌─────────────────────────────┐
-│  MCP Dev Skills Server       │
-│                              │
-│  Skills Library:             │
-│  📁 microservices/           │
-│  📁 frontend/                │
-│  📁 database/                │
-│  📁 devops/                  │
-│  📁 testing/                 │
-│                              │
-│  Each skill = guides +       │
-│  templates + rules           │
-└─────────────────────────────┘
-```
+---
 
 ## Core Tools
 
-| Tool | Description |
+| Tool | What It Does |
 |------|-------------|
-| `list_skills` | Browse available skills by category |
-| `get_skill` | Retrieve a specific skill document (patterns, rules, examples) |
-| `scaffold` | Generate files from skill templates |
-| `check_standards` | Validate code against your team's rules |
+| `list_skills` | Browse all skills organized by category |
+| `get_skill` | Retrieve a specific skill or category overview, or search by keyword |
+| `scaffold` | Generate files from Handlebars templates with variable substitution |
+| `check_standards` | Extract rules from skill docs and create a compliance checklist |
 
-## Skill Categories
+---
 
-### Microservices
-- REST endpoint patterns, error handling, authentication
-- Circuit breaker, saga pattern, CQRS
-- Service mesh, API gateway, inter-service communication
-- Scaffolds: controller, service, DTO, tests
+## Skill Categories (Included)
 
-### Frontend
-- Component patterns (React/Vue/Angular), state management
-- Performance optimization, SSR/SSG setup
-- Accessibility, responsive design, animations
-- Scaffolds: component, stories, tests, types
+| Category | Skills | Description |
+|----------|--------|-------------|
+| **backend-patterns** | 12 | NestJS controllers, services, guards, interceptors, middleware |
+| **contract-patterns** | 6 | Zod schemas, route constants, event contracts, barrel exports |
+| **cross-service-patterns** | 4 | Service clients, distributed locks, response envelopes |
+| **database-patterns** | 6 | Prisma ORM, db-per-service, env validation, seed data |
+| **event-patterns** | 5 | RabbitMQ publishers, subscribers, event flows |
+| **frontend-patterns** | 21 | React pages, data tables, forms, charts, auth, wizards |
+| **infra-patterns** | 6 | Dockerfiles, docker-compose, infra generators |
 
-### Database & Data Layer
-- Schema design, migrations, repository pattern
-- Query optimization, indexing strategies
-- Soft delete, audit trails, multi-tenancy
+---
 
-### DevOps & Infrastructure
-- Dockerfiles (optimized multi-stage builds)
-- CI/CD pipelines (GitHub Actions, GitLab CI)
-- Kubernetes manifests, monitoring, alerting
+## Using a Custom Skills Directory
 
-### Testing
-- Unit, integration, e2e test patterns
-- Test factories, fixtures, contract tests
-- Coverage strategies
+By default the server loads skills from `src/skills/` inside the repo. To point it at **your own** skills library:
 
-## Tech Stack
+```bash
+# Via environment variable
+SKILLS_DIR=/path/to/your/skills node dist/index.js
 
-- **Language:** TypeScript
-- **Runtime:** Node.js
-- **Protocol:** MCP (Model Context Protocol) over stdio
-- **SDK:** `@modelcontextprotocol/sdk`
+# Or via CLI argument
+node dist/index.js --skills-dir /path/to/your/skills
+```
+
+Skills are organized as Markdown files in category folders:
+
+```
+your-skills/
+├── backend/
+│   ├── index.md          ← category overview (optional)
+│   ├── controller.md
+│   └── service.md
+├── frontend/
+│   ├── index.md
+│   └── component.md
+└── testing/
+    └── unit-testing.md
+```
+
+---
 
 ## Project Structure
 
 ```
 mcp-toolkit/
 ├── src/
-│   ├── index.ts                # Server entry point
+│   ├── index.ts                 # Server entry point
+│   ├── utils/
+│   │   └── skills-loader.ts     # Loads .md files from skills directory
 │   ├── tools/
-│   │   ├── list-skills.ts      # List available skills
-│   │   ├── get-skill.ts        # Retrieve skill content
-│   │   ├── scaffold.ts         # Generate from templates
-│   │   └── check-standards.ts  # Validate against rules
-│   └── skills/                 # The knowledge base
-│       ├── microservices/
-│       │   ├── rest-endpoint.md
-│       │   ├── error-handling.md
-│       │   ├── authentication.md
-│       │   └── templates/
-│       ├── frontend/
-│       │   ├── react-component.md
-│       │   ├── state-management.md
-│       │   └── templates/
-│       ├── database/
-│       │   ├── migration.md
-│       │   └── repository-pattern.md
-│       ├── devops/
-│       │   ├── dockerfile.md
-│       │   └── ci-pipeline.md
-│       └── testing/
-│           ├── unit-testing.md
-│           └── test-factories.md
-├── .vscode/mcp.json            # VS Code Copilot config
+│   │   ├── list-skills.ts       # list_skills tool
+│   │   ├── get-skill.ts         # get_skill tool
+│   │   ├── scaffold.ts          # scaffold tool
+│   │   └── check-standards.ts   # check_standards tool
+│   └── skills/                  # Built-in knowledge base (60 skills)
+│       ├── backend-patterns/
+│       ├── contract-patterns/
+│       ├── cross-service-patterns/
+│       ├── database-patterns/
+│       ├── event-patterns/
+│       ├── frontend-patterns/
+│       └── infra-patterns/
+├── dist/                        # Compiled output (after npm run build)
+├── .vscode/mcp.json             # VS Code Copilot MCP config
 ├── package.json
 ├── tsconfig.json
-└── README.md
+└── readme.md
 ```
 
-## Client Configuration
+## Tech Stack
 
-### VS Code (GitHub Copilot)
+- **TypeScript** • **Node.js** • **MCP SDK** (`@modelcontextprotocol/sdk`) • **Zod** for validation
+- Protocol: JSON-RPC 2.0 over **stdio** transport
 
-Add `.vscode/mcp.json` to your workspace:
+## npm Scripts
 
-```json
-{
-  "servers": {
-    "dev-skills": {
-      "command": "node",
-      "args": ["./dist/index.js"]
-    }
-  }
-}
-```
+| Script | Command | Description |
+|--------|---------|-------------|
+| `build` | `npm run build` | Compile TypeScript → `dist/` |
+| `dev` | `npm run dev` | Watch mode (recompile on changes) |
+| `start` | `npm start` | Run the compiled server |
+| `inspect` | `npm run inspect` | Open MCP Inspector web UI |
 
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "dev-skills": {
-      "command": "node",
-      "args": ["/path/to/mcp-toolkit/dist/index.js"]
-    }
-  }
-}
-```
+---
 
 ## Example Usage
 
-**"Create a new payment microservice"**
-→ AI reads your microservice + REST endpoint skills → scaffolds a complete service following your patterns
+Once connected, try these prompts with your AI assistant:
 
-**"Add authentication to this Express app"**
-→ AI reads your auth skill → implements JWT/session auth the way your team does it
+- **"List all available skills"** → calls `list_skills`, shows all 7 categories
+- **"Show me the NestJS controller pattern"** → calls `get_skill("backend-patterns/controller")`
+- **"How do you handle events?"** → calls `get_skill` with keyword search across all skills
+- **"Check this code against the backend standards"** → calls `check_standards`
+- **"Scaffold a new microservice called inventory"** → calls `scaffold` with your templates
 
-**"Set up CI/CD for this repo"**
-→ AI reads your CI pipeline skill → generates GitHub Actions config with your standard stages
+---
 
-**"Review this code against our standards"**
-→ AI calls `check_standards` → flags violations of your conventions
+## Adding Your Own Skills
 
-## MVP Scope
+1. Create a new `.md` file in any category folder under `src/skills/`
+2. Optionally add an `index.md` to the category for an overview
+3. Rebuild: `npm run build`
+4. The skill is immediately available via `list_skills` and `get_skill`
 
-1. Core MCP server with stdio transport
-2. `list_skills` and `get_skill` tools
-3. 3-5 sample skill documents (microservices, frontend, testing)
-4. `scaffold` tool with basic template generation
-5. VS Code + Claude Desktop config examples
+**Skill file format** — just write Markdown. Include sections like:
 
-## Future Roadmap
+```markdown
+# My Skill Name
 
-- `check_standards` tool for automated validation
-- Skill authoring CLI (`mcp-toolkit add-skill`)
-- Community skill packs (installable via npm)
-- Custom skill authoring (YAML/Markdown format)
-- SSE transport for remote/shared servers
-- Prompt templates for common workflows
+## When to Use
+...
+
+## Rules
+- Rule 1
+- Rule 2
+
+## Template
+\```typescript
+// code example
+\```
+```
+
+The `check_standards` tool automatically extracts items from **Rules**, **Standards**, and **Checklist** sections.
+
+---
+
+## License
+
+MIT
