@@ -4,30 +4,34 @@
 
 **Type:** Injectable Service  
 **Layer:** Business Logic / Application  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/services/property.service.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/services/<module>.service.ts`
 
 ## 2. Overview
 
 Services are the heart of every module — they contain all business logic, orchestration, data mapping, and validation beyond what Zod handles at the boundary. A service is injected into one or more controllers and acts as the single coordination point between the repository (data access), the event publisher (async messaging), and any external service clients.
 
-Services **never** return raw Prisma entities. Every entity retrieved from the repository is mapped through a private `toResponse()` method that converts the Prisma model into the shape defined by the `@myorg/contracts` response schema. This mapping handles type coercions (e.g., `BigInt` → `Number`, `Decimal` → `string`), nested relation flattening, and field renaming.
+Services **never** return raw Prisma entities. Every entity retrieved from the repository is mapped through a private `toResponse()` method that calls the contract's Zod response schema `.parse()` to validate the outgoing shape. This ensures the response matches the contract exactly and strips any extra fields. The mapping handles type coercions (e.g., `BigInt` → `Number`, `Decimal` → `string`), nested relation flattening, and field renaming.
 
 Pagination is standardised: `list()` calls the repository's `findMany()` (which returns a `[items[], count]` tuple), then uses `calculateOffset()` and `buildPaginationMeta()` from `@myorg/common` to construct the pagination envelope.
 
 All mutations publish domain events via the `Publisher` so downstream services (notifications, audit log, analytics) react asynchronously.
 
+> **DX Enhancement:** Use `buildUpdateData(body, fieldMap)` from `@myorg/common` to construct partial update payloads instead of manually building `if (field !== undefined)` chains. This generic utility maps contract field names to Prisma column names and only includes defined fields.
+
 ## 3. Rules
 
 1. **`@Injectable()` decorator.** Every service class must be decorated with `@Injectable()`.
 2. **Constructor injection only.** Inject dependencies via the constructor: repository, publisher, config client, etc.
-3. **Never return Prisma entities.** Every public method must map results through `toResponse()` before returning.
-4. **Use domain error classes.** Throw `NotFoundError`, `ConflictError`, or `ValidationError` from `@myorg/common` — never raw `HttpException`.
+3. **Never return Prisma entities.** Every public method must map results through `toResponse()` which uses the contract Zod schema `.parse()` before returning.
+4. **Use domain error classes.** Throw `NotFoundError`, `ConflictError`, or `ValidationError` from `@myorg/common` — never raw `HttpException` or NestJS built-in exceptions (`NotFoundException`, etc.).
 5. **Soft deletes only.** `delete()` sets `status: "DELETED"`, `deletedAt: new Date()`, `updatedBy: userId` — never calls Prisma `delete()`.
 6. **Publish events after successful mutations.** Call `publisher.publishResourceCreated()`, `publishResourceUpdated()`, or `publishResourceDeleted()` after the repository operation succeeds.
 7. **Pagination via helpers.** Use `calculateOffset(page, limit)` and `buildPaginationMeta(total, page, limit)` from `@myorg/common` — never compute pagination manually.
-8. **Partial updates.** `update()` must only forward fields that are actually present in the parsed body — never overwrite with `undefined`.
-9. **`toResponse()` is private.** It is an internal mapping concern and must not be exposed or reused outside the service.
+8. **Partial updates via `buildUpdateData()`.** Use `buildUpdateData(body, fieldMap)` from `@myorg/common` to map contract fields to Prisma columns — never build manual `if (field !== undefined)` chains.
+9. **`toResponse()` is private and uses Zod `.parse()`.** It must call `ResponseSchema.parse({ ... })` to validate the shape and strip extra fields.
 10. **No HTTP concepts.** Services must not reference status codes, request/response objects, or decorators. They operate in a transport-agnostic domain layer.
+11. **No Zod validation of input.** The controller already validated input with Zod — the service receives typed data. Never duplicate Zod parse in services.
+12. **`userId: string` required on all write methods.** Controllers extract via `@CurrentUser("userId")` and pass to service for `createdBy`/`updatedBy` audit fields.
 
 ## 4. Structure
 
@@ -46,17 +50,24 @@ modules/domain/<domain>/<module>/src/services/
 | `ResourcePublisher`                                 | `../publishers/resource.publisher`    | Domain event publishing |
 | `ConfigClient`                                      | `../clients/config.client` (optional) | External service config |
 | `calculateOffset`, `buildPaginationMeta`            | `@myorg/common`                       | Pagination helpers      |
+| `buildUpdateData`                                   | `@myorg/common`                       | Partial update mapping  |
 | `NotFoundError`, `ConflictError`, `ValidationError` | `@myorg/common`                       | Domain error classes    |
 
 ## 5. Example Implementation
 
 ```typescript
 import { Injectable } from "@nestjs/common";
-import { calculateOffset, buildPaginationMeta, NotFoundError, ConflictError } from "@myorg/common";
+import {
+    calculateOffset,
+    buildPaginationMeta,
+    buildUpdateData,
+    NotFoundError,
+    ConflictError,
+} from "@myorg/common";
+import { ResourceResponseSchema } from "@myorg/contracts";
 import type {
     ResourceQuery,
     CreateResourceBody,
-    UpdateResourceBody,
     ResourceResponse,
     PaginatedResourceResponse,
 } from "@myorg/contracts";
@@ -130,23 +141,27 @@ export class ResourceService {
     }
 
     /**
-     * Partially update a resource. Only fields present in the input are
-     * forwarded to the repository — undefined fields are not overwritten.
+     * Partially update a resource. Uses buildUpdateData() to map contract
+     * field names to Prisma columns — only defined fields are forwarded.
      */
-    async update(id: string, data: UpdateResourceBody, userId: string): Promise<ResourceResponse> {
+    async update(
+        id: string,
+        body: Partial<CreateResourceBody>,
+        userId: string,
+    ): Promise<ResourceResponse> {
         // Ensure the resource exists before updating
         const existing = await this.resourceRepository.findById(id);
         if (!existing) {
             throw new NotFoundError("Resource", id);
         }
 
-        // Build a partial update payload — only include defined fields
-        const updateData: Record<string, unknown> = {};
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.description !== undefined) updateData.description = data.description;
-        if (data.status !== undefined) updateData.status = data.status;
-        if (data.effectiveDate !== undefined)
-            updateData.effectiveDate = new Date(data.effectiveDate);
+        // Build a partial update payload using the shared utility
+        const updateData = buildUpdateData(body, {
+            name: "name",
+            description: "description",
+            status: "status",
+            effectiveDate: "effectiveDate",
+        });
 
         const entity = await this.resourceRepository.update(id, {
             ...updateData,
@@ -184,16 +199,17 @@ export class ResourceService {
     // ---------------------------------------------------------------------------
 
     /**
-     * Maps a Prisma entity (with includes) to the contract response shape.
+     * Maps a Prisma entity (with includes) to the contract response shape
+     * using the Zod schema .parse() for validation and field stripping.
      *
      * Key transformations:
      * - BigInt fields → Number (e.g., `Number(entity.assessedValue)`)
      * - Decimal fields → string (e.g., `entity.rate.toString()`)
      * - Nested relations → flattened or cherry-picked fields
-     * - Date objects → ISO strings handled by JSON serialization
+     * - Date objects → ISO strings via `.toISOString()`
      */
     private toResponse(entity: any): ResourceResponse {
-        return {
+        return ResourceResponseSchema.parse({
             id: entity.id,
             code: entity.code,
             name: entity.name,
@@ -215,11 +231,11 @@ export class ResourceService {
                       value: Number(entity.assessments[0].value),
                   }
                 : null,
-            createdAt: entity.createdAt,
-            updatedAt: entity.updatedAt,
+            createdAt: entity.createdAt?.toISOString(),
+            updatedAt: entity.updatedAt?.toISOString(),
             createdBy: entity.createdBy,
             updatedBy: entity.updatedBy,
-        };
+        });
     }
 }
 ```
@@ -229,6 +245,8 @@ export class ResourceService {
 - The `list()` method destructures filter defaults, calls the repository, maps items, and attaches pagination metadata — all in one clean flow.
 - `getById()` is a guard-then-map pattern: fetch → null-check → map.
 - `create()` optionally checks for uniqueness conflicts before persisting, then publishes an event.
-- `update()` builds a partial payload so that only explicitly provided fields are sent to Prisma — this prevents accidentally nullifying columns.
+- `update()` uses `buildUpdateData()` from `@myorg/common` to map contract fields to Prisma columns — this prevents accidentally nullifying columns and eliminates manual `if (field !== undefined)` chains.
 - `delete()` is a soft delete — the repository sets `status: "DELETED"` and `deletedAt`, never removes the row.
-- `toResponse()` centralises all Prisma-to-contract mapping, including `BigInt` → `Number`, `Decimal` → `string`, and nested relation extraction.
+- `toResponse()` calls `ResourceResponseSchema.parse()` to validate the outgoing shape against the contract, stripping any extra fields and catching shape drift at the service boundary.
+- **No Zod input validation in services** — the controller already validated with Zod. Services receive typed, validated data.
+- **`userId: string` is required on all write methods** — controllers extract via `@CurrentUser("userId")` and pass directly.

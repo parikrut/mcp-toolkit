@@ -6,7 +6,7 @@
 **Layer:** Events / Infrastructure  
 **File Location:** `modules/domain/<domain>/<module>/src/events/publishers/<resource>.publisher.ts`  
 **Naming Convention:** `<Resource>Publisher` (e.g., `OrderManagementPublisher`, `BillingPublisher`)  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/events/publishers/order-management.publisher.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/events/publishers/<module>.publisher.ts`
 
 ## 2. Overview
 

@@ -66,3 +66,28 @@ per-module setup required.
 | 10  | [interceptors.md](interceptors.md) | 4 interceptors: CorrelationId → Envelope → Validation → Audit |
 | 11  | [middleware.md](middleware.md)     | 3 middleware: API version, correlation ID, request logging    |
 | 12  | [health-check.md](health-check.md) | Terminus liveness / readiness probes                          |
+
+## Anti-Patterns & DX Guide
+
+| #   | Pattern                              | Description                                             |
+| --- | ------------------------------------ | ------------------------------------------------------- |
+| 13  | [anti-patterns.md](anti-patterns.md) | Common mistakes found during DX audits with corrections |
+
+## DX Enhancements
+
+The following patterns were codified after full pattern alignment audits
+and should be enforced across all modules:
+
+| Enhancement                                    | Where       | Description                                                       |
+| ---------------------------------------------- | ----------- | ----------------------------------------------------------------- |
+| `@CurrentUser("userId")` not `@CurrentUser()`  | Controllers | Extract userId string directly, pass to services                  |
+| `@Patch` not `@Put`                            | Controllers | Partial updates are the standard                                  |
+| `@AuditAction("create", "resource")` lowercase | Controllers | Action verbs are lowercase, resource is kebab-case                |
+| `@ResponseSchema()` on every handler           | Controllers | Runtime response validation via interceptor                       |
+| Zod `.parse()` in `toResponse()`               | Services    | Response shape validated against contract schema                  |
+| `NotFoundError` from `@myorg/common`           | Services    | Never `NotFoundException` from `@nestjs/common`                   |
+| `buildUpdateData(body, fieldMap)`              | Services    | Shared utility replaces manual `if (field !== undefined)` chains  |
+| No Zod parse in services                       | Services    | Controller is the sole validation boundary                        |
+| `z.string()` for date query params             | Controllers | Never `z.coerce.date()` — services handle conversion              |
+| Inline schemas for analytics                   | Controllers | When no contract schema exists, define `z.object()` at file scope |
+| `rawBody as any` cast                          | Controllers | When no contract body schema exists for the endpoint              |

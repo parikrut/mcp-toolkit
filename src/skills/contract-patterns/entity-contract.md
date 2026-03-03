@@ -10,6 +10,8 @@ and is consumed identically by the NestJS backend (validation, Swagger) and the
 React frontend (typed API client, form schemas). Every entity contract follows a
 strict **7-section structure** that keeps schemas co-located and discoverable.
 
+> **DX Enhancement:** All contract schemas are the single source of truth consumed by both controllers (Zod `.parse()` at input gate) and services (`toResponse()` via schema `.parse()` at output). Controllers never define their own DTOs — they import directly from `@myorg/contracts`.
+
 ## 2. Overview
 
 | Section                         | Purpose                                                              |
@@ -109,7 +111,7 @@ packages/contracts/src/contracts/<domain>/<entity>.contract.ts
 │   │       list<Entities>:   defineEndpoint({ method: "GET",  path: Routes.<entities>, … }),
 │   │       get<Entity>:      defineEndpoint({ method: "GET",  path: `${Routes.<entities>}/:id`, … }),
 │   │       create<Entity>:   defineEndpoint({ method: "POST", path: Routes.<entities>, … }),
-│   │       update<Entity>:   defineEndpoint({ method: "PUT",  path: `${Routes.<entities>}/:id`, … }),
+│   │       update<Entity>:   defineEndpoint({ method: "PATCH", path: `${Routes.<entities>}/:id`, … }),
 │   │       delete<Entity>:   defineEndpoint({ method: "DELETE", path: `${Routes.<entities>}/:id`, … }),
 │   │   } as const
 │   └── export type <Entity>ContractType = typeof <Entity>Contract
@@ -285,7 +287,7 @@ export const PropertyContract = {
         tags: ["revenue", "order-management"],
     }),
     updateProperty: defineEndpoint({
-        method: "PUT",
+        method: "PATCH",
         path: `${Routes.properties}/:id`,
         params: PropertyIdParamsSchema,
         body: UpdatePropertyBodySchema,
@@ -471,7 +473,7 @@ export const TaxBillContract = {
         tags: ["revenue", "billing"],
     }),
     updateTaxBill: defineEndpoint({
-        method: "PUT",
+        method: "PATCH",
         path: `${Routes.taxBills}/:id`,
         params: TaxBillIdParamsSchema,
         body: UpdateTaxBillBodySchema,

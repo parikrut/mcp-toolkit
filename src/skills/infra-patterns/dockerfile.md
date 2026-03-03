@@ -4,7 +4,7 @@
 
 **Type:** Multi-Stage Dockerfile  
 **Layer:** Infrastructure / Container Build  
-**Reference Implementation:** `modules/domain/revenue/order-management/Dockerfile`
+**Reference Implementation:** `modules/domain/<domain>/<module>/Dockerfile`
 
 ## 2. Overview
 

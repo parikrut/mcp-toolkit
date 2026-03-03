@@ -6,7 +6,7 @@
 **Layer:** Events / Infrastructure  
 **File Location:** `modules/domain/<domain>/<module>/src/events/subscribers/<source-module>.subscriber.ts`  
 **Naming Convention:** `<SourceModule>Subscriber` (e.g., `AssessmentSubscriber`, `PaymentSubscriber`)  
-**Reference Implementation:** `modules/domain/revenue/billing/src/events/subscribers/assessment.subscriber.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/events/subscribers/<event>.subscriber.ts`
 
 ## 2. Overview
 
@@ -468,7 +468,9 @@ describe("AssessmentSubscriber", () => {
     });
 
     it("should throw and route to DLQ on invalid payload", async () => {
-        await expect(subscriber.handleOrderManagementCreated({ invalid: "data" })).rejects.toThrow();
+        await expect(
+            subscriber.handleOrderManagementCreated({ invalid: "data" }),
+        ).rejects.toThrow();
     });
 
     it("should throw and route to DLQ on service failure", async () => {

@@ -4,7 +4,7 @@
 
 **Type:** Container Entrypoint Shell Script  
 **Layer:** Infrastructure / Runtime Bootstrap  
-**Reference Implementation:** `modules/domain/revenue/order-management/docker-entrypoint.sh`
+**Reference Implementation:** `modules/domain/<domain>/<module>/docker-entrypoint.sh`
 
 ## 2. Overview
 

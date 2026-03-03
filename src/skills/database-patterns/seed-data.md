@@ -4,7 +4,7 @@
 
 **Type:** Database Seed Script  
 **Layer:** Data / DevOps  
-**Reference Implementation:** `modules/domain/revenue/order-management/prisma/seed.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/prisma/seed.ts`
 
 ## 2. Overview
 

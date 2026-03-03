@@ -4,7 +4,7 @@
 
 **Type:** Injectable Repository  
 **Layer:** Data Access / Persistence  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/repositories/property.repository.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/repositories/<resource>.repository.ts`
 
 ## 2. Overview
 
@@ -211,4 +211,14 @@ export class ResourceRepository {
 - The default filter `{ status: { not: "DELETED" } }` ensures soft-deleted records are hidden in normal listing. Passing an explicit `status` overrides this (e.g., admin views).
 - `Promise.all([findMany, count])` fires both queries concurrently — reducing total latency for paginated reads.
 - `delete()` is `update()` under the hood — the row is never physically removed.
-- The repository returns raw Prisma entities (`ResourceWithIncludes`); the service's `toResponse()` handles the contract mapping.
+- The repository returns raw Prisma entities (`ResourceWithIncludes`); the service's `toResponse()` handles the contract mapping using Zod `.parse()`.
+
+## 7. DX Enhancement Notes
+
+| Practice                         | Detail                                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Return raw Prisma entities**   | Never map to response shapes in the repository — that belongs in the service's `toResponse()` with Zod `.parse()` |
+| **`delete()` requires `userId`** | Always accept `userId: string` so `updatedBy` is stamped on soft deletes                                          |
+| **No error throwing**            | The repository returns `null` for not-found; the service decides whether to throw `NotFoundError`                 |
+| **Filter-only `where` building** | Use conditional spread (`...(field ? { field } : {})`) — never pass `undefined` values to Prisma                  |
+| **Consistent includes**          | One `const` at module scope, every method uses it — guarantees `WithIncludes` type accuracy                       |

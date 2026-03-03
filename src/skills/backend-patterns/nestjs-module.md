@@ -4,7 +4,7 @@
 
 **Type:** NestJS Module  
 **Layer:** Composition Root / Dependency Wiring  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/order-management.module.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/<module>.module.ts`
 
 ## 2. Overview
 

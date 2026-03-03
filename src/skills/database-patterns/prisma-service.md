@@ -4,7 +4,7 @@
 
 **Type:** Injectable Database Client  
 **Layer:** Data / Persistence  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/prisma.service.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/prisma.service.ts`
 
 ## 2. Overview
 

@@ -45,10 +45,14 @@ the corresponding guard or interceptor that reads the metadata.
    ASSESSOR or higher.
 5. **`@CurrentUser()` with no argument returns the full `RequestUser`.**
    With a string argument (e.g., `@CurrentUser("userId")`), it returns only
-   that field from `request.user`.
-6. **`@AuditAction()` requires at least the `action` string.** The optional
-   `resource` string defaults to the controller's base path. Used by
-   `AuditInterceptor` to log structured audit entries.
+   that field from `request.user`. **The standard pattern in all controllers
+   is `@CurrentUser("userId") userId: string`** — extracting just the userId
+   string for passing to services.
+6. **`@AuditAction()` requires at least the `action` string.** The action
+   should be **lowercase** (e.g., `"create"`, `"update"`, `"delete"`,
+   `"approve"`). The optional `resource` string is kebab-case singular
+   (e.g., `"benefit-plan"`, `"pay-run"`). Used by `AuditInterceptor` to
+   log structured audit entries.
 7. **`@ResponseSchema()` takes a Zod schema object.** The
    `ResponseValidationInterceptor` uses it to validate outgoing data.
    In development, validation failure throws. In production, it logs a
@@ -168,12 +172,12 @@ export interface AuditActionMetadata {
  *
  * @example
  * @Post()
- * @AuditAction("CREATE", "assessment")
+ * @AuditAction("create", "assessment")
  * create(@Body() dto: CreateAssessmentDto) { ... }
  *
  * @example
  * @Delete(":id")
- * @AuditAction("DELETE")
+ * @AuditAction("delete")
  * remove(@Param("id") id: string) { ... }
  */
 export const AuditAction = (action: string, resource?: string) =>
@@ -221,11 +225,28 @@ export { ResponseSchema, RESPONSE_SCHEMA_KEY } from "./response-schema.decorator
 ### Combined Usage in a Controller
 
 ```typescript
-import { Controller, Get, Post, Delete, Param, Body } from "@nestjs/common";
+import {
+    Controller,
+    Get,
+    Post,
+    Delete,
+    Param,
+    Body,
+    Query,
+    HttpCode,
+    HttpStatus,
+} from "@nestjs/common";
+import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { Public, Roles, CurrentUser, AuditAction, ResponseSchema } from "@myorg/common";
-import { RequestUser } from "@myorg/common";
-import { PropertyResponseSchema } from "@myorg/contracts";
+import {
+    PropertyResponseSchema,
+    PropertyQuerySchema,
+    CreatePropertyBodySchema,
+    PropertyIdParamsSchema,
+} from "@myorg/contracts";
 
+@ApiTags("Properties")
+@ApiBearerAuth()
 @Controller("properties")
 export class PropertyController {
     constructor(private readonly propertyService: PropertyService) {}
@@ -233,30 +254,40 @@ export class PropertyController {
     // Public — no auth required
     @Public()
     @Get("search")
+    @ApiOperation({ summary: "Public property search" })
     publicSearch(@Query("q") query: string) {
         return this.propertyService.publicSearch(query);
     }
 
     // Any authenticated user — no @Roles()
-    @Get(":id")
     @ResponseSchema(PropertyResponseSchema)
-    findOne(@Param("id") id: string, @CurrentUser() user: RequestUser) {
-        return this.propertyService.findOne(id, user.municipalityId);
+    @Get(":id")
+    @ApiOperation({ summary: "Get property by ID" })
+    findOne(@Param() rawParams: unknown) {
+        const { id } = PropertyIdParamsSchema.parse(rawParams);
+        return this.propertyService.findOne(id);
     }
 
     // FINANCE_OFFICER or higher — with audit logging
+    @ResponseSchema(PropertyResponseSchema)
     @Post()
-    @Roles("FINANCE_OFFICER")
-    @AuditAction("CREATE", "property")
-    create(@Body() dto: CreatePropertyDto, @CurrentUser() user: RequestUser) {
-        return this.propertyService.create(dto, user);
+    @HttpCode(HttpStatus.CREATED)
+    @Roles("FINANCE_OFFICER", "SYSTEM_ADMIN")
+    @AuditAction("create", "property")
+    @ApiOperation({ summary: "Create property" })
+    create(@Body() rawBody: unknown, @CurrentUser("userId") userId: string) {
+        const body = CreatePropertyBodySchema.parse(rawBody);
+        return this.propertyService.create(body, userId);
     }
 
     // SYSTEM_ADMIN only — with audit logging
     @Delete(":id")
+    @HttpCode(HttpStatus.NO_CONTENT)
     @Roles("SYSTEM_ADMIN")
-    @AuditAction("DELETE", "property")
-    remove(@Param("id") id: string, @CurrentUser("userId") userId: string) {
+    @AuditAction("delete", "property")
+    @ApiOperation({ summary: "Delete property" })
+    remove(@Param() rawParams: unknown, @CurrentUser("userId") userId: string) {
+        const { id } = PropertyIdParamsSchema.parse(rawParams);
         return this.propertyService.remove(id, userId);
     }
 }

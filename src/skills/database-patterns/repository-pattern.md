@@ -4,7 +4,7 @@
 
 **Type:** Injectable Repository (Database Interaction)  
 **Layer:** Data Access / Persistence  
-**Reference Implementation:** `modules/domain/revenue/order-management/src/repositories/property.repository.ts`
+**Reference Implementation:** `modules/domain/<domain>/<module>/src/repositories/<resource>.repository.ts`
 
 ## 2. Overview
 

@@ -4,7 +4,7 @@
 
 **Type:** Database Schema Definition  
 **Layer:** Data / Persistence  
-**Reference Implementation:** `modules/domain/revenue/order-management/prisma/schema.prisma`
+**Reference Implementation:** `modules/domain/<domain>/<module>/prisma/schema.prisma`
 
 ## 2. Overview
 
