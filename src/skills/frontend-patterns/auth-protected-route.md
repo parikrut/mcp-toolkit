@@ -52,6 +52,22 @@ The flow:
    since it is simple (2-3 fields).
 10. **Error display** uses a rose-coloured inline message, not a toast.
 
+### Cross-App Reusability
+
+11. **`AuthProvider` is identical across portals** — extract it to a shared
+    package with a `storageKey` + `api` prop so each app configures its own
+    localStorage namespace and Axios instance. See
+    [reusability.md](reusability.md).
+12. **`ProtectedRoute` and `useFocusOnRouteChange`** are fully generic —
+    extract alongside the auth context.
+13. **Core role helpers are shared; permission booleans are app-specific.**
+    The shared auth module exports `hasRole`, `hasAnyRole`, and
+    `hasMinimumRole`. Each app wraps `useAuth()` in a local hook that adds
+    domain-specific booleans (e.g. `canManagePayroll`, `canManageProperties`).
+14. **Login page** follows the same structure across portals. Use the shared
+    `<LoginLayout>` from `packages/ui` and pass app-specific props
+    (`productName`, demo credentials).
+
 ## 4. Structure
 
 ```

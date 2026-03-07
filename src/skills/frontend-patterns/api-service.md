@@ -42,6 +42,26 @@ the failed request.
 8. **Pass `signal` to all GET requests** for automatic TanStack Query
    cancellation on unmount.
 
+### Cross-App Reusability
+
+9.  **All three API-service files are extraction candidates.** When multiple
+    portals share the same backend conventions, `services/api.ts`,
+    `lib/parse-response.ts`, and `lib/use-typed-query.ts` should live in a
+    shared package (e.g. `packages/app-core`). See
+    [reusability.md](reusability.md).
+10. **Use a `createApiClient(config)` factory** instead of a bare
+    `axios.create()` in each app. The factory accepts per-app config
+    (`storagePrefix`, `baseUrl`) and wires up the standard interceptors
+    (envelope unwrap, 401 refresh queue, error logging) once.
+11. **`parseResponse` and typed-query hooks are zero-domain.** They validate
+    generic Zod schemas and have no product-specific logic — extract them
+    as-is without parameterisation.
+12. **Each app's `services/api.ts` becomes a one-liner:**
+    ```tsx
+    import { createApiClient } from "@myorg/app-core";
+    export const api = createApiClient({ storagePrefix: "civic_hr" });
+    ```
+
 ## 4. Structure
 
 ```

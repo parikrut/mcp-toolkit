@@ -45,6 +45,16 @@ in `main.tsx`) can emit toasts without being inside a React component tree.
    `MutationCache.onError` skips the generic toast to avoid duplicates.
 10. **Do not use `window.alert()`** — always use the toast system.
 
+### Cross-App Reusability
+
+11. **`ToastProvider` and `useToast` are identical across portals** — extract
+    them to a shared package (e.g. `packages/app-core`) alongside the
+    `emitToast`/`onToast` emitter from `packages/ui`. See
+    [reusability.md](reusability.md).
+12. **Do not duplicate the toast provider in each app.** After extraction,
+    apps import `ToastProvider` from the shared package and include it in
+    their `main.tsx` provider stack — no local `hooks/use-toast.tsx` needed.
+
 ## 4. Structure
 
 ```

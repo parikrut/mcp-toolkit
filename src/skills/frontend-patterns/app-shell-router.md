@@ -64,6 +64,21 @@ main.tsx  (providers)
 10. **No business logic** in `main.tsx` or `App.tsx`. They are purely
     structural — providers and route definitions only.
 
+### Cross-App Reusability
+
+11. **Extract shared shell infrastructure** when multiple portals exist.
+    `main.tsx` (provider stack), `AppLayout`, `Header`, and `PageLayout`
+    are typically identical across portals and should live in a shared
+    `packages/app-core` package. See [reusability.md](reusability.md).
+12. **Route definitions and sidebar nav config stay app-specific.** Each
+    portal has unique routes, navigation groups, and role guards —
+    these remain in `apps/<product>-web/`.
+13. **`ProtectedRoute` and `useFocusOnRouteChange`** are generic — extract
+    them alongside the layout shell components.
+14. **Use factory functions** for the provider stack where config differs
+    (e.g. `createQueryClient()`, `createApiClient()` accept per-app
+    options). The JSX composition in `main.tsx` remains a thin wrapper.
+
 ## 4. Structure
 
 ```

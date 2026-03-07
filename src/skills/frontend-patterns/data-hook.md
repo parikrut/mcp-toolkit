@@ -48,6 +48,19 @@ and invalidate the relevant query keys on success.
    page-level consumers (e.g. `export type { PropertyResponse as Property }`).
 8. **No UI code.** Hook files must not import React components or JSX.
 
+### Cross-App Reusability
+
+9.  **`useTypedListQuery`, `useTypedQuery`, and `useTypedMutation`** are
+    generic helpers with no domain awareness — extract them to a shared
+    package (e.g. `packages/app-core`). See [reusability.md](reusability.md).
+10. **`parseResponse`** is equally generic and should be extracted alongside
+    the typed-query hooks.
+11. **Domain hooks stay in the app.** `use-employees.ts`, `use-properties.ts`,
+    etc. are inherently product-specific and remain in `apps/<product>-web/src/hooks/`.
+12. **Query-key factories are domain-specific** and stay in the consuming app,
+    but their hierarchical structure (`all → lists → list(filters)`) is a
+    shared convention documented here.
+
 ## 4. Structure
 
 ```

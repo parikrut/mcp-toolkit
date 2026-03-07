@@ -78,6 +78,25 @@ the **Nordic minimal** design system.
 | 19  | [app-shell-router.md](app-shell-router.md)         | Provider stack, lazy routing, layout shell  |
 | 20  | [auth-protected-route.md](auth-protected-route.md) | Auth context, login flow, role-based guards |
 | 21  | [toast-system.md](toast-system.md)                 | Toast notification context and emitter      |
+| 22  | [reusability.md](reusability.md)                   | Cross-app code sharing & extraction rules   |
+
+## Reusability Layer
+
+When the monorepo hosts **multiple portals** (e.g. HR, Tax, Permits), a
+significant portion of app infrastructure is identical. The
+[reusability.md](reusability.md) pattern defines a three-tier package
+architecture (`packages/contracts` → `packages/ui` → `packages/app-core`)
+with clear extraction rules:
+
+- **Identical code** (auth context, query client, toast provider, layout
+  shell, typed-query hooks) → `packages/app-core`
+- **Configurable code** (API client, storage keys) → factory functions in
+  `packages/app-core`
+- **Domain-specific code** (routes, sidebar nav, permission booleans,
+  feature slices) → stays in `apps/<product>-web/`
+
+Refer to each infrastructure pattern's **Cross-App Reusability** section for
+pattern-specific guidance.
 
 ## File Map (Properties example)
 
